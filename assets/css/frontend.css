@@ -1,0 +1,86 @@
+/* IVB Cartera - estilos del cliente. Paleta IVB: azul 4d738a / 5f7f98 / 99adbb. Mobile first (390 px). */
+:root{
+  --ivbc-ink:#1f3340;
+  --ivbc-blue:#4d738a;
+  --ivbc-blue-d:#3a5a6e;
+  --ivbc-blue-l:#5f7f98;
+  --ivbc-soft:#eef3f6;
+  --ivbc-line:#d3dde4;
+  --ivbc-ok:#2f7d5b;
+  --ivbc-warn:#9a6b17;
+  --ivbc-bad:#a34444;
+}
+.ivbc-svg{display:block;flex:0 0 auto}
+
+/* ---- Aviso en carrito y checkout ---- */
+.ivbc-notice{display:flex;gap:14px;align-items:flex-start;margin:0 0 18px;padding:16px 16px;border:1px solid var(--ivbc-line);border-left:4px solid var(--ivbc-blue-l);border-radius:10px;background:#fff;color:var(--ivbc-ink);line-height:1.45;box-sizing:border-box;width:100%}
+.ivbc-notice--ok{background:linear-gradient(180deg,#f3f8fa 0%,#eaf2f5 100%);border-left-color:var(--ivbc-blue)}
+.ivbc-notice__ico{display:flex;flex:0 0 40px;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:var(--ivbc-blue);color:#fff}
+.ivbc-notice__ico .ivbc-svg{width:22px;height:22px}
+.ivbc-notice__body{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1 1 auto}
+.ivbc-notice__title{font-size:16px;font-weight:600;color:var(--ivbc-ink)}
+.ivbc-notice__title .woocommerce-Price-amount{color:var(--ivbc-blue-d)}
+.ivbc-notice__text{font-size:14px;color:#3d5260}
+.ivbc-notice__bal{font-size:13px;color:#5b6f7c}
+.ivbc-notice__bal a{color:var(--ivbc-blue-d);text-decoration:underline}
+.ivbc-bar{display:block;height:8px;border-radius:999px;background:#dbe5eb;overflow:hidden;margin-top:2px}
+.ivbc-bar>span{display:block;height:100%;background:var(--ivbc-blue);border-radius:999px}
+.ivbc-bar-label{font-size:12px;color:#5b6f7c}
+.ivbc-notice--thanks{margin:20px 0}
+#ivbc-notice:empty{display:none}
+
+/* ---- Mi cartera ---- */
+.ivbc-wallet{color:var(--ivbc-ink)}
+.ivbc-hero{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 22px;border-radius:14px;background:linear-gradient(135deg,var(--ivbc-blue-d) 0%,var(--ivbc-blue) 55%,var(--ivbc-blue-l) 100%);color:#fff;box-shadow:0 8px 22px rgba(58,90,110,.22)}
+.ivbc-hero>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ivbc-hero__label{font-size:13px;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+.ivbc-hero__amount{font-size:clamp(30px,8vw,44px);font-weight:700;line-height:1.1;letter-spacing:-.01em}
+.ivbc-hero__amount .woocommerce-Price-amount,.ivbc-hero__amount .woocommerce-Price-currencySymbol{color:#fff}
+.ivbc-hero__sub{font-size:13px;opacity:.85}
+.ivbc-hero__ico{display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.16);flex:0 0 auto}
+.ivbc-hero__ico .ivbc-svg{width:30px;height:30px}
+.ivbc-chips{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.ivbc-chips li{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--ivbc-line);border-radius:999px;background:var(--ivbc-soft);font-size:13px;color:#3d5260}
+.ivbc-chips .ivbc-svg{width:18px;height:18px;color:var(--ivbc-blue)}
+.ivbc-h{margin:28px 0 12px;font-size:17px;font-weight:600;color:var(--ivbc-ink)}
+.ivbc-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.ivbc-steps li{display:flex;flex-direction:column;gap:6px;padding:14px;border:1px solid var(--ivbc-line);border-radius:12px;background:#fff;font-size:13px;color:#3d5260}
+.ivbc-steps li strong{font-size:15px;color:var(--ivbc-ink)}
+.ivbc-steps .ivbc-svg{color:var(--ivbc-blue)}
+.ivbc-empty{padding:16px;border:1px dashed var(--ivbc-line);border-radius:10px;color:#5b6f7c;background:#fafcfd}
+.ivbc-moves{list-style:none;margin:0;padding:0;border:1px solid var(--ivbc-line);border-radius:12px;overflow:hidden}
+.ivbc-move{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 16px;background:#fff}
+.ivbc-move+.ivbc-move{border-top:1px solid var(--ivbc-line)}
+.ivbc-move__main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ivbc-move__title{font-size:14px;font-weight:600;color:var(--ivbc-ink)}
+.ivbc-move__meta{font-size:12px;color:#6c7f8c}
+.ivbc-move__side{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:0 0 auto}
+.ivbc-move__amount{font-size:16px;font-weight:700;color:var(--ivbc-ink);font-variant-numeric:tabular-nums}
+.ivbc-move.ivbc-void .ivbc-move__title,.ivbc-move.ivbc-void .ivbc-move__meta{color:#8a97a0}
+.ivbc-move.ivbc-void .ivbc-move__amount{color:#8a97a0;text-decoration:line-through}
+.ivbc-badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.ivbc-badge--confirmed{background:#e3f1ea;color:var(--ivbc-ok)}
+.ivbc-badge--pending{background:#f7ecd5;color:var(--ivbc-warn)}
+.ivbc-badge--void{background:#efe1e1;color:var(--ivbc-bad)}
+.ivbc-note{margin:14px 0 0;font-size:13px;color:#5b6f7c}
+
+/* ---- Tarjeta pequeña en el panel de Mi cuenta ---- */
+.ivbc-mini{display:flex;align-items:center;gap:14px;margin:0 0 22px;padding:14px 16px;border-radius:12px;background:var(--ivbc-soft);border:1px solid var(--ivbc-line);color:var(--ivbc-ink);text-decoration:none}
+.ivbc-mini:hover{border-color:var(--ivbc-blue)}
+.ivbc-mini__ico{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;background:var(--ivbc-blue);color:#fff}
+.ivbc-mini__txt{display:flex;flex-direction:column;flex:1 1 auto;font-size:13px;color:#5b6f7c}
+.ivbc-mini__txt strong{font-size:20px;color:var(--ivbc-ink)}
+.ivbc-mini__go{font-size:13px;font-weight:600;color:var(--ivbc-blue-d)}
+
+/* ---- Menú de Mi cuenta ---- */
+.woocommerce-MyAccount-navigation-link--mi-cartera a:before{content:"";display:inline-block;width:1.1em;height:1.1em;margin-right:.55em;vertical-align:-.15em;background:currentColor;font-family:inherit;
+  -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M3 7a2 2 0 0 1 2-2h12v3'/><path d='M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2'/></svg>") no-repeat center/contain;
+  mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M3 7a2 2 0 0 1 2-2h12v3'/><path d='M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2'/></svg>") no-repeat center/contain}
+
+@media (max-width:600px){
+  .ivbc-steps{grid-template-columns:1fr}
+  .ivbc-hero{padding:18px}
+  .ivbc-hero__ico{width:46px;height:46px}
+  .ivbc-notice{padding:14px}
+  .ivbc-notice__ico{flex-basis:36px;width:36px;height:36px}
+}
