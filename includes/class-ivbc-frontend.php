@@ -17,10 +17,12 @@ class Ivbc_Frontend {
         add_filter('query_vars', array(__CLASS__, 'query_vars'));
         add_action('wp_enqueue_scripts', array(__CLASS__, 'enqueue'));
 
-        // Carrito y checkout
-        add_action('woocommerce_before_cart_totals', array(__CLASS__, 'echo_cart_notice'));
-        add_action('woocommerce_checkout_before_order_review_heading', array(__CLASS__, 'echo_checkout_notice'));
+        // Carrito y checkout: en la zona de avisos de arriba, justo después de los demás avisos (prioridad 20).
+        // Nunca entre las columnas del checkout, porque rompe la maquetación del tema.
+        add_action('woocommerce_before_cart', array(__CLASS__, 'echo_cart_notice'), 20);
+        add_action('woocommerce_before_checkout_form', array(__CLASS__, 'echo_checkout_notice'), 20);
         add_filter('woocommerce_update_order_review_fragments', array(__CLASS__, 'checkout_fragment'));
+        add_filter('woocommerce_add_to_cart_fragments', array(__CLASS__, 'checkout_fragment'));
 
         // Pedido realizado y correos
         add_action('woocommerce_thankyou', array(__CLASS__, 'thankyou_card'), 15);

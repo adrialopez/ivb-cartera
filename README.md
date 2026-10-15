@@ -29,3 +29,4 @@ Tabla `{prefix}ivbc_ledger` (una fila por apunte: acumulación, ajuste). El sald
 - 1.1.0: el saldo solo se suma desde procesando; se elimina el concepto de saldo pendiente.
 - 1.2.0: (retirada) bloqueo de pedidos con código de descuento.
 - 1.2.1: cualquier cupón permite acumular; se retira el bloqueo de 1.2.0.
+- 1.2.2: el aviso de carrito y checkout pasa a la zona de avisos de arriba (antes estaba entre las columnas del checkout y rompía la maquetación).
