@@ -94,7 +94,7 @@ class Ivbc_Frontend {
         if ($eval['eligible']) {
             $title = 'Este pedido acumula ' . wc_price($eval['amount']) . ' en tu cartera IVB';
             $text  = 'Es el ' . esc_html($pct) . ' % del importe de tus productos, sin IVA ni material promocional. '
-                . 'Podrás usarlo como descuento en la campaña de Black Friday' . ($expiry ? ', hasta el ' . esc_html($expiry) : '') . '.';
+                . 'Se suma a tu cartera cuando confirmemos el pago del pedido. Podrás usarlo como descuento en la campaña de Black Friday' . ($expiry ? ', hasta el ' . esc_html($expiry) : '') . '.';
             $class = 'ivbc-notice ivbc-notice--ok';
             $bar   = '';
         } else {
@@ -108,9 +108,8 @@ class Ivbc_Frontend {
         }
 
         $bal = '';
-        if ($balance['confirmed'] > 0 || $balance['pending'] > 0) {
+        if ($balance['confirmed'] > 0) {
             $bal = '<span class="ivbc-notice__bal">Tu saldo acumulado: <strong>' . wc_price($balance['confirmed']) . '</strong>'
-                . ($balance['pending'] > 0 ? ' (más ' . wc_price($balance['pending']) . ' pendiente de confirmar)' : '')
                 . ' &middot; <a href="' . esc_url(wc_get_account_endpoint_url(self::ENDPOINT)) . '">Ver mi cartera</a></span>';
         }
 
@@ -148,12 +147,27 @@ class Ivbc_Frontend {
 
     /* ---------- pedido realizado y correo ---------- */
 
-    private static function order_amount_text($order_id) {
-        $row = Ivbc_Ledger::get_accrual($order_id);
-        if (!$row || $row->status === 'void' || (float) $row->amount <= 0) {
+    /**
+     * Qué le pasa a este pedido con la cartera. Devuelve array(estado, importe) o null.
+     * estado: confirmed (ya sumado) | waiting (acumulará cuando se confirme el pago)
+     */
+    private static function order_wallet($order) {
+        $uid = (int) $order->get_customer_id();
+        if (!$uid || !Ivbc_Rules::enabled_for_user($uid)) {
             return null;
         }
-        return array($row, (float) $row->amount);
+        $row = Ivbc_Ledger::get_accrual($order->get_id());
+        if ($row && $row->status === 'confirmed' && (float) $row->amount > 0) {
+            return array('confirmed', (float) $row->amount);
+        }
+        if (in_array($order->get_status(), array('pending', 'on-hold'), true)) {
+            $created = $order->get_date_created();
+            $eval    = Ivbc_Rules::evaluate_order($order);
+            if ($eval['eligible'] && $eval['amount'] > 0 && Ivbc_Rules::in_window($created ? $created->getTimestamp() : time(), $uid)) {
+                return array('waiting', (float) $eval['amount']);
+            }
+        }
+        return null;
     }
 
     public static function thankyou_card($order_id) {
@@ -161,36 +175,38 @@ class Ivbc_Frontend {
         if (!$order || !self::user_ok() || (int) $order->get_customer_id() !== get_current_user_id()) {
             return;
         }
-        $info = self::order_amount_text($order_id);
+        $info = self::order_wallet($order);
         if (!$info) {
             return;
         }
-        list($row, $amount) = $info;
+        list($state, $amount) = $info;
         $expiry = self::date_es(Ivbc_Settings::get('expiry'));
         wp_enqueue_style('ivbc-frontend', IVBC_URL . 'assets/css/frontend.css', array(), IVBC_VERSION);
+        $title = $state === 'confirmed' ? 'Has acumulado ' . wc_price($amount) . ' en tu cartera IVB' : 'Este pedido acumulará ' . wc_price($amount) . ' en tu cartera IVB';
+        $text  = $state === 'confirmed' ? 'Ya está en tu cartera. ' : 'Se sumará cuando confirmemos el pago del pedido. ';
         echo '<div class="ivbc-notice ivbc-notice--ok ivbc-notice--thanks"><span class="ivbc-notice__ico">' . self::icon('wallet') . '</span>'
-            . '<div class="ivbc-notice__body"><strong class="ivbc-notice__title">Has acumulado ' . wc_price($amount) . ' en tu cartera IVB</strong>'
-            . '<span class="ivbc-notice__text">' . ($row->status === 'pending' ? 'El saldo se confirmará cuando registremos el pago de este pedido. ' : 'Ya está en tu cartera. ')
-            . 'Podrás usarlo como descuento en la campaña de Black Friday' . ($expiry ? ', hasta el ' . esc_html($expiry) : '') . '.</span>'
+            . '<div class="ivbc-notice__body"><strong class="ivbc-notice__title">' . $title . '</strong>'
+            . '<span class="ivbc-notice__text">' . $text . 'Podrás usarlo como descuento en la campaña de Black Friday' . ($expiry ? ', hasta el ' . esc_html($expiry) : '') . '.</span>'
             . '<span class="ivbc-notice__bal"><a href="' . esc_url(wc_get_account_endpoint_url(self::ENDPOINT)) . '">Ver mi cartera</a></span></div></div>'; // phpcs:ignore WordPress.Security.EscapeOutput
     }
 
     public static function email_line($order, $sent_to_admin, $plain_text, $email = null) {
-        if ($sent_to_admin || !$order || !Ivbc_Rules::enabled_for_user((int) $order->get_customer_id())) {
+        if ($sent_to_admin || !$order) {
             return;
         }
-        $info = self::order_amount_text($order->get_id());
+        $info = self::order_wallet($order);
         if (!$info) {
             return;
         }
-        $amount = $info[1];
+        list($state, $amount) = $info;
         $expiry = self::date_es(Ivbc_Settings::get('expiry'));
+        $verb   = $state === 'confirmed' ? 'te ha acumulado' : 'te acumulará, cuando confirmemos el pago,';
         if ($plain_text) {
-            echo "\n" . sprintf('Este pedido te acumula %s en tu cartera IVB para la campaña de Black Friday%s.', wp_strip_all_tags(wc_price($amount)), $expiry ? ' (hasta el ' . $expiry . ')' : '') . "\n";
+            echo "\n" . sprintf('Este pedido %s %s en tu cartera IVB para la campaña de Black Friday%s.', $verb, wp_strip_all_tags(wc_price($amount)), $expiry ? ' (hasta el ' . $expiry . ')' : '') . "\n";
             return;
         }
         echo '<p style="margin:16px 0;padding:12px 14px;background:#eef3f6;border-left:4px solid #4d738a;color:#1f3340;">'
-            . '<strong>Este pedido te acumula ' . wp_kses_post(wc_price($amount)) . ' en tu cartera IVB</strong><br>'
+            . '<strong>Este pedido ' . esc_html($verb) . ' ' . wp_kses_post(wc_price($amount)) . ' en tu cartera IVB</strong><br>'
             . 'Podrás usarlo como descuento en la campaña de Black Friday' . ($expiry ? ', hasta el ' . esc_html($expiry) : '') . '.</p>';
     }
 
@@ -230,9 +246,6 @@ class Ivbc_Frontend {
         $expiry = self::date_es(Ivbc_Settings::get('expiry'));
         $limit  = rtrim(rtrim(number_format((float) Ivbc_Settings::get('redeem_limit'), 2, ',', ''), '0'), ',');
         $out    = '';
-        if ($balance['pending'] > 0) {
-            $out .= '<li>' . self::icon('clock') . '<span>Pendiente de confirmar <strong>' . wc_price($balance['pending']) . '</strong></span></li>';
-        }
         if ($expiry) {
             $out .= '<li>' . self::icon('tag') . '<span>Utilizable hasta el <strong>' . esc_html($expiry) . '</strong></span></li>';
         }
@@ -269,7 +282,7 @@ class Ivbc_Frontend {
         if (!$rows) {
             echo '<p class="ivbc-empty">Todavía no tienes movimientos. Cuando hagas un pedido que cumpla las condiciones, aparecerá aquí.</p>';
         } else {
-            $labels = array('pending' => 'Pendiente de pago', 'confirmed' => 'Confirmado', 'void' => 'Anulado');
+            $labels = array('confirmed' => 'Confirmado', 'void' => 'Anulado');
             echo '<ul class="ivbc-moves">';
             foreach ($rows as $r) {
                 $ts   = strtotime($r->created_gmt . ' UTC');

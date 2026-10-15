@@ -90,7 +90,6 @@ class Ivbc_Admin {
 
         echo '<div class="ivbc-kpis">'
             . '<div class="ivbc-kpi"><span>Saldo confirmado</span><strong>' . self::money($t['confirmed']) . '</strong></div>'
-            . '<div class="ivbc-kpi"><span>Pendiente de confirmar</span><strong>' . self::money($t['pending']) . '</strong></div>'
             . '<div class="ivbc-kpi"><span>Clientes con saldo</span><strong>' . (int) $t['customers'] . '</strong></div>'
             . '<div class="ivbc-kpi"><span>Pedidos que acumulan</span><strong>' . (int) $t['orders'] . '</strong></div></div>';
 
@@ -103,13 +102,13 @@ class Ivbc_Admin {
             echo '<p class="ivbc-empty">Todavía no hay movimientos en la cartera.' . (Ivbc_Rules::mode() === 'admins' ? ' Con el modo de pruebas, haz un pedido de al menos ' . (int) Ivbc_Settings::get('min_units') . ' unidades con una cuenta de administrador.' : '') . '</p>';
             return;
         }
-        echo '<table class="widefat striped ivbc-table"><thead><tr><th>Cliente</th><th>Correo</th><th class="num">Pedidos</th><th class="num">Pendiente</th><th class="num">Saldo</th><th>Último movimiento</th><th></th></tr></thead><tbody>';
+        echo '<table class="widefat striped ivbc-table"><thead><tr><th>Cliente</th><th>Correo</th><th class="num">Pedidos</th><th class="num">Saldo</th><th>Último movimiento</th><th></th></tr></thead><tbody>';
         foreach ($list['rows'] as $r) {
             $u    = get_userdata($r->user_id);
             $name = $u ? trim(get_user_meta($u->ID, 'billing_company', true) ?: $u->display_name) : 'Usuario #' . (int) $r->user_id;
             echo '<tr><td><a href="' . esc_url(self::url(array('user' => (int) $r->user_id))) . '"><strong>' . esc_html($name) . '</strong></a></td>'
                 . '<td>' . esc_html($u ? $u->user_email : '') . '</td><td class="num">' . (int) $r->orders . '</td>'
-                . '<td class="num">' . self::money($r->pending) . '</td><td class="num"><strong>' . self::money($r->confirmed) . '</strong></td>'
+                . '<td class="num"><strong>' . self::money($r->confirmed) . '</strong></td>'
                 . '<td>' . esc_html(get_date_from_gmt($r->last_gmt, 'd/m/Y H:i')) . '</td>'
                 . '<td><a class="button button-small" href="' . esc_url(self::url(array('user' => (int) $r->user_id))) . '">Ver</a></td></tr>';
         }
@@ -133,8 +132,7 @@ class Ivbc_Admin {
         $company = get_user_meta($user_id, 'billing_company', true);
         echo '<p><a href="' . esc_url(self::url()) . '">&larr; Volver al listado</a></p>';
         echo '<h2>' . esc_html($company ?: $u->display_name) . ' <small>(' . esc_html($u->user_email) . ')</small></h2>';
-        echo '<div class="ivbc-kpis"><div class="ivbc-kpi"><span>Saldo confirmado</span><strong>' . self::money($b['confirmed']) . '</strong></div>'
-            . '<div class="ivbc-kpi"><span>Pendiente de confirmar</span><strong>' . self::money($b['pending']) . '</strong></div></div>';
+        echo '<div class="ivbc-kpis"><div class="ivbc-kpi"><span>Saldo confirmado</span><strong>' . self::money($b['confirmed']) . '</strong></div></div>';
 
         echo '<h3>Movimientos</h3>';
         echo '<table class="widefat striped ivbc-table"><thead><tr><th>Fecha</th><th>Tipo</th><th>Pedido</th><th>Unidades</th><th>Base</th><th>Estado</th><th class="num">Importe</th><th>Nota</th></tr></thead><tbody>';
@@ -145,7 +143,7 @@ class Ivbc_Admin {
             $order = $r->order_id ? '<a href="' . esc_url(get_edit_post_link((int) $r->order_id) ?: admin_url('admin.php?page=wc-orders&action=edit&id=' . (int) $r->order_id)) . '">#' . (int) $r->order_id . '</a>' : '';
             echo '<tr><td>' . esc_html(get_date_from_gmt($r->created_gmt, 'd/m/Y H:i')) . '</td><td>' . esc_html($r->type === 'accrual' ? 'Acumulación' : ($r->type === 'adjust' ? 'Ajuste' : $r->type)) . '</td>'
                 . '<td>' . $order . '</td><td>' . ($r->units !== null ? (int) $r->units : '') . '</td><td>' . ($r->base !== null ? self::money($r->base) : '') . '</td>'
-                . '<td><span class="ivbc-pill ivbc-pill--' . esc_attr($r->status) . '">' . esc_html($r->status === 'confirmed' ? 'Confirmado' : ($r->status === 'pending' ? 'Pendiente' : 'Anulado')) . '</span></td>'
+                . '<td><span class="ivbc-pill ivbc-pill--' . esc_attr($r->status) . '">' . esc_html($r->status === 'confirmed' ? 'Confirmado' : 'Anulado') . '</span></td>'
                 . '<td class="num">' . self::money($r->amount) . '</td><td>' . esc_html($r->note) . '</td></tr>';
         }
         echo '</tbody></table>';
@@ -263,9 +261,9 @@ class Ivbc_Admin {
         $eval = Ivbc_Rules::evaluate_order($order);
         echo '<p>Unidades que cuentan: <strong>' . (int) $eval['units'] . '</strong> de ' . (int) $eval['min'] . ' (sin material promocional ni regalos).<br>Base: ' . self::money($eval['base']) . '</p>';
         if ($row && $row->status !== 'void') {
-            echo '<p>Acumula <strong>' . self::money($row->amount) . '</strong> &middot; ' . esc_html($row->status === 'confirmed' ? 'confirmado' : 'pendiente de pago') . '</p>';
+            echo '<p>Acumulado en la cartera: <strong>' . self::money($row->amount) . '</strong></p>';
         } else {
-            echo '<p>' . ($eval['eligible'] ? 'Cumple las unidades, pero no acumula (fuera de campaña, estado del pedido o cartera apagada para este cliente).' : 'No acumula: no llega al mínimo de unidades.') . '</p>';
+            echo '<p>' . ($eval['eligible'] ? 'Cumple las unidades, pero todavía no suma: el pedido tiene que estar procesando o completado (y dentro de campaña, con la cartera activa para este cliente).' : 'No acumula: no llega al mínimo de unidades.') . '</p>';
         }
         echo '<p><a class="button" href="' . esc_url(wp_nonce_url(admin_url('admin-post.php?action=ivbc_recalc&order_id=' . (int) $order->get_id()), 'ivbc_recalc')) . '">Recalcular</a></p>';
     }

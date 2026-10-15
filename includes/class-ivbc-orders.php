@@ -2,9 +2,9 @@
 /**
  * Ciclo de vida de los pedidos: crea, confirma o anula el apunte de acumulación.
  *
- * - Pedido pendiente de pago o en espera -> apunte "pending"
- * - Pedido procesando o completado       -> apunte "confirmed"
- * - Pedido cancelado, fallido o reembolsado -> apunte "void"
+ * - Pedido procesando o completado           -> apunte "confirmed" (se suma al saldo)
+ * - Pedido pendiente de pago o en espera      -> sin apunte (si lo había, se anula: el pago no está confirmado)
+ * - Pedido cancelado, fallido o reembolsado   -> apunte "void"
  * Es idempotente: se puede llamar tantas veces como se quiera.
  */
 if (!defined('ABSPATH')) {
@@ -29,7 +29,7 @@ class Ivbc_Orders {
             return 'confirmed';
         }
         if (in_array($s, array('pending', 'on-hold'), true)) {
-            return 'pending';
+            return 'wait';
         }
         return 'void';
     }
@@ -69,7 +69,11 @@ class Ivbc_Orders {
             }
 
             $status = self::target_status($order);
-            if ($status === 'void' || !Ivbc_Rules::in_window($ts, $user_id) || !$eval['eligible'] || $eval['amount'] <= 0) {
+            if ($status === 'wait') {
+                // Sin pago confirmado no hay saldo. Si el pedido vuelve atrás desde procesando, se retira.
+                Ivbc_Ledger::void_accrual($order_id);
+                $result = array('state' => 'wait', 'eval' => $eval);
+            } elseif ($status === 'void' || !Ivbc_Rules::in_window($ts, $user_id) || !$eval['eligible'] || $eval['amount'] <= 0) {
                 Ivbc_Ledger::void_accrual($order_id);
                 $result = array('state' => 'void', 'eval' => $eval);
             } else {

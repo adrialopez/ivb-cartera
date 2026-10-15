@@ -2,7 +2,7 @@
 /**
  * Plugin Name: IVB Cartera
  * Description: Cartera de saldo para clientes B2B. Acumula un porcentaje del importe de los pedidos que cumplan las condiciones de la campaña (PREBLACK) y lo muestra en carrito, checkout, Mi cuenta y administración.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Adrià López
  * Author URI: https://adria-lopez.com
  * Text Domain: ivb-cartera
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('IVBC_VERSION', '1.0.0');
+define('IVBC_VERSION', '1.1.0');
 define('IVBC_FILE', __FILE__);
 define('IVBC_DIR', plugin_dir_path(__FILE__));
 define('IVBC_URL', plugin_dir_url(__FILE__));
