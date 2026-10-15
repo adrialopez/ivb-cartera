@@ -12,18 +12,18 @@
 }
 .ivbc-svg{display:block;flex:0 0 auto}
 
-/* ---- Aviso en carrito y checkout ---- */
-.ivbc-notice{display:flex;gap:14px;align-items:flex-start;margin:0 0 18px;padding:16px 16px;border:1px solid var(--ivbc-line);border-left:4px solid var(--ivbc-blue-l);border-radius:10px;background:#fff;color:var(--ivbc-ink);line-height:1.45;box-sizing:border-box;width:100%}
-.ivbc-notice--ok{background:linear-gradient(180deg,#f3f8fa 0%,#eaf2f5 100%);border-left-color:var(--ivbc-blue)}
-.ivbc-notice__ico{display:flex;flex:0 0 40px;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:var(--ivbc-blue);color:#fff}
-.ivbc-notice__ico .ivbc-svg{width:22px;height:22px}
-.ivbc-notice__body{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1 1 auto}
-.ivbc-notice__title{font-size:16px;font-weight:600;color:var(--ivbc-ink)}
+/* ---- Aviso en carrito y checkout (misma familia visual que los avisos de escala) ---- */
+.ivbc-notice{display:flex;gap:14px;align-items:flex-start;margin:0 0 12px;padding:14px 18px;border:1px solid #d9e2e8;border-radius:12px;background:#fff;color:#2b3a45;line-height:1.5;box-sizing:border-box;width:100%;font-size:14.5px}
+.ivbc-notice--ok{background:#eef4f7;border-color:#cfdde6}
+.ivbc-notice__ico{display:flex;flex:0 0 36px;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:var(--ivbc-blue);color:#fff}
+.ivbc-notice__ico .ivbc-svg{width:20px;height:20px}
+.ivbc-notice__body{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1 1 auto}
+.ivbc-notice__title{font-size:15.5px;font-weight:700;color:var(--ivbc-ink)}
 .ivbc-notice__title .woocommerce-Price-amount{color:var(--ivbc-blue-d)}
-.ivbc-notice__text{font-size:14px;color:#3d5260}
+.ivbc-notice__text{font-size:14.5px;color:#3d5260}
 .ivbc-notice__bal{font-size:13px;color:#5b6f7c}
 .ivbc-notice__bal a{color:var(--ivbc-blue-d);text-decoration:underline}
-.ivbc-bar{display:block;height:8px;border-radius:999px;background:#dbe5eb;overflow:hidden;margin-top:2px}
+.ivbc-bar{display:block;height:6px;border-radius:999px;background:#dbe5eb;overflow:hidden;margin-top:6px}
 .ivbc-bar>span{display:block;height:100%;background:var(--ivbc-blue);border-radius:999px}
 .ivbc-bar-label{font-size:12px;color:#5b6f7c}
 .ivbc-notice--thanks{margin:20px 0}
@@ -81,6 +81,6 @@
   .ivbc-steps{grid-template-columns:1fr}
   .ivbc-hero{padding:18px}
   .ivbc-hero__ico{width:46px;height:46px}
-  .ivbc-notice{padding:14px}
-  .ivbc-notice__ico{flex-basis:36px;width:36px;height:36px}
+  .ivbc-notice{padding:12px 14px;gap:12px;font-size:14px}
+  .ivbc-notice__ico{flex-basis:32px;width:32px;height:32px}
 }
