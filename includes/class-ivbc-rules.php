@@ -62,33 +62,18 @@ class Ivbc_Rules {
         return self::$promo_cache[$product_id];
     }
 
-    /** Códigos de descuento usados que bloquean la acumulación (todos menos los permitidos). */
-    public static function blocking_coupons(array $codes) {
-        $allowed = Ivbc_Settings::allowed_coupons();
-        $out     = array();
-        foreach ($codes as $c) {
-            $c = strtolower(trim((string) $c));
-            if ($c !== '' && !in_array($c, $allowed, true)) {
-                $out[] = $c;
-            }
-        }
-        return array_values(array_unique($out));
-    }
-
     /** Resultado estándar a partir de unidades e importe base. */
-    public static function result($units, $base, array $blocked_by = array()) {
+    public static function result($units, $base) {
         $min = (int) Ivbc_Settings::get('min_units');
         $pct = (float) Ivbc_Settings::get('percent');
-        $ok  = $units >= $min && !$blocked_by;
+        $ok  = $units >= $min;
         return array(
-            'blocked_by' => $blocked_by,
             'units'    => (int) $units,
             'base'     => round((float) $base, 2),
             'min'      => $min,
             'pct'      => $pct,
             'eligible' => $ok,
             'missing'  => max(0, $min - (int) $units),
-            'has_units' => $units >= $min,
             'amount'   => $ok ? round($base * $pct / 100, 2) : 0.0,
         );
     }
@@ -112,7 +97,7 @@ class Ivbc_Rules {
             $units += $qty;
             $base  += $total;
         }
-        return self::result($units, $base, self::blocking_coupons($order->get_coupon_codes()));
+        return self::result($units, $base);
     }
 
     /** Evalúa el carrito actual. */
@@ -138,6 +123,6 @@ class Ivbc_Rules {
             $units += $qty;
             $base  += $total;
         }
-        return self::result($units, $base, self::blocking_coupons($cart->get_applied_coupons()));
+        return self::result($units, $base);
     }
 }

@@ -13,7 +13,7 @@ Cartera de saldo para clientes B2B de profesional.ivbwellness.com (WooCommerce).
 - **"Al menos 20"**: se usa >= 20, como dice el correo (la petición hablaba de "más de 20").
 - **Cuándo se suma**: solo cuando el pedido está **procesando o completado**. Pendiente de pago o en espera no suma nada. Si un pedido ya sumado vuelve a en espera, se cancela o se reembolsa, el saldo se retira. Reembolsos parciales restan de la base.
 - **Fecha que se mira**: la de creación del pedido, en zona horaria del sitio.
-- **Códigos de descuento**: un pedido con un código de descuento no acumula, salvo los códigos permitidos (por defecto `2desctf`, el cupón automático del 2 % por transferencia, que lleva el 67 % de los pedidos). Se configura en Ajustes. Los descuentos de reglas de precios (escalas, packs) no cuentan como código.
+- **Códigos de descuento**: no afectan a la acumulación. Cualquier pedido con cupón acumula igualmente. Como la base son las líneas ya con descuentos, el 5 % se calcula sobre lo que realmente paga el cliente.
 - **Canje**: **no implementado**. Solo se muestra el límite (20 % por pedido) y la fecha (4 de diciembre). El "inicio del canje" está pendiente de confirmación.
 
 ## Visibilidad
@@ -27,4 +27,5 @@ Tabla `{prefix}ivbc_ledger` (una fila por apunte: acumulación, ajuste). El sald
 ## Versiones
 - 1.0.0: acumulación, avisos, Mi cartera, administración.
 - 1.1.0: el saldo solo se suma desde procesando; se elimina el concepto de saldo pendiente.
-- 1.2.0: los pedidos con código de descuento no acumulan (salvo los códigos permitidos).
+- 1.2.0: (retirada) bloqueo de pedidos con código de descuento.
+- 1.2.1: cualquier cupón permite acumular; se retira el bloqueo de 1.2.0.
