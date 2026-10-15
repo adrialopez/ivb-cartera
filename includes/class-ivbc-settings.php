@@ -23,7 +23,6 @@ class Ivbc_Settings {
             'min_units'    => 20,
             'redeem_limit' => 20,
             'expiry'       => '2026-12-04',
-            'redeem_note'  => 'Inicio del canje: pendiente de confirmación.',
         );
     }
 
@@ -67,7 +66,6 @@ class Ivbc_Settings {
             'min_units'    => isset($in['min_units']) ? max(1, (int) $in['min_units']) : $d['min_units'],
             'redeem_limit' => isset($in['redeem_limit']) ? max(0, min(100, (float) str_replace(',', '.', $in['redeem_limit']))) : $d['redeem_limit'],
             'expiry'       => $date(isset($in['expiry']) ? $in['expiry'] : '', $d['expiry']),
-            'redeem_note'  => isset($in['redeem_note']) ? sanitize_text_field($in['redeem_note']) : $d['redeem_note'],
         );
     }
 }

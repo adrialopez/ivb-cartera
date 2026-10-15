@@ -176,7 +176,6 @@ class Ivbc_Admin {
         $field('Unidades mínimas', '<input type="number" min="1" name="settings[min_units]" value="' . (int) $s['min_units'] . '" size="5">', 'Unidades que no sean material promocional ni regalos.');
         $field('Límite de uso por pedido', '<input type="text" name="settings[redeem_limit]" value="' . esc_attr(str_replace('.', ',', (string) $s['redeem_limit'])) . '" size="5"> %', 'Solo informativo por ahora: el canje todavía no está activo.');
         $field('Fecha límite de uso', '<input type="date" name="settings[expiry]" value="' . esc_attr($s['expiry']) . '">');
-        $field('Texto sobre el canje', '<input type="text" name="settings[redeem_note]" value="' . esc_attr($s['redeem_note']) . '" class="large-text">');
         echo '</tbody></table><p><button class="button button-primary">Guardar ajustes</button></p></form>';
     }
 

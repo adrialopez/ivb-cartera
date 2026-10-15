@@ -14,7 +14,7 @@ Cartera de saldo para clientes B2B de profesional.ivbwellness.com (WooCommerce).
 - **Cuándo se suma**: solo cuando el pedido está **procesando o completado**. Pendiente de pago o en espera no suma nada. Si un pedido ya sumado vuelve a en espera, se cancela o se reembolsa, el saldo se retira. Reembolsos parciales restan de la base.
 - **Fecha que se mira**: la de creación del pedido, en zona horaria del sitio.
 - **Códigos de descuento**: no afectan a la acumulación. Cualquier pedido con cupón acumula igualmente. Como la base son las líneas ya con descuentos, el 5 % se calcula sobre lo que realmente paga el cliente.
-- **Canje**: **no implementado**. Solo se muestra el límite (20 % por pedido) y la fecha (4 de diciembre). El "inicio del canje" está pendiente de confirmación.
+- **Canje**: **no implementado**. Solo se muestra el límite (20 % por pedido) y la fecha (4 de diciembre). 
 
 ## Visibilidad
 Ajuste "Quién la ve": `admins` (por defecto: solo administradores, `manage_options`), `all` o `off`.
@@ -32,3 +32,4 @@ Tabla `{prefix}ivbc_ledger` (una fila por apunte: acumulación, ajuste). El sald
 - 1.2.2: el aviso de carrito y checkout pasa a la zona de avisos de arriba (antes estaba entre las columnas del checkout y rompía la maquetación).
 - 1.2.3: el aviso del carrito pasa a prioridad 12 (orden: acelerador, tu escala, cartera, seguir comprando) y comparte estilo con los demás avisos.
 - 1.2.4: Mi cartera blindada frente al CSS de Betheme (márgenes y sangrías de listas): bloques alineados y con espacio entre ellos.
+- 1.2.5: Mi cartera sin el nombre de la campaña ni el texto de canje pendiente.

@@ -266,11 +266,10 @@ class Ivbc_Frontend {
         $rows    = Ivbc_Ledger::movements($uid, 100);
         $pct     = rtrim(rtrim(number_format((float) Ivbc_Settings::get('percent'), 2, ',', ''), '0'), ',');
         $min     = (int) Ivbc_Settings::get('min_units');
-        $camp    = esc_html((string) Ivbc_Settings::get('campaign'));
 
         echo '<div class="ivbc-wallet">';
         echo '<div class="ivbc-hero"><div><span class="ivbc-hero__label">Saldo disponible</span><span class="ivbc-hero__amount">' . wc_price($balance['confirmed']) . '</span>'
-            . '<span class="ivbc-hero__sub">Cartera IVB &middot; campaña ' . $camp . '</span></div>'
+            . '<span class="ivbc-hero__sub">Cartera IVB</span></div>'
             . '<span class="ivbc-hero__ico">' . self::icon('wallet') . '</span></div>'; // phpcs:ignore WordPress.Security.EscapeOutput
         echo self::chips($balance); // phpcs:ignore WordPress.Security.EscapeOutput
 
@@ -299,7 +298,7 @@ class Ivbc_Frontend {
             }
             echo '</ul>';
         }
-        echo '<p class="ivbc-note">' . esc_html((string) Ivbc_Settings::get('redeem_note')) . '</p></div>';
+        echo '</div>';
     }
 
     public static function dashboard_card() {
