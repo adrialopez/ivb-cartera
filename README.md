@@ -31,3 +31,4 @@ Tabla `{prefix}ivbc_ledger` (una fila por apunte: acumulación, ajuste). El sald
 - 1.2.1: cualquier cupón permite acumular; se retira el bloqueo de 1.2.0.
 - 1.2.2: el aviso de carrito y checkout pasa a la zona de avisos de arriba (antes estaba entre las columnas del checkout y rompía la maquetación).
 - 1.2.3: el aviso del carrito pasa a prioridad 12 (orden: acelerador, tu escala, cartera, seguir comprando) y comparte estilo con los demás avisos.
+- 1.2.4: Mi cartera blindada frente al CSS de Betheme (márgenes y sangrías de listas): bloques alineados y con espacio entre ellos.
