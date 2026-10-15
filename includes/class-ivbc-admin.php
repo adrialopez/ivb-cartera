@@ -173,6 +173,7 @@ class Ivbc_Admin {
         $field('Nombre de la campaña', '<input type="text" name="settings[campaign]" value="' . esc_attr($s['campaign']) . '" class="regular-text">');
         $field('Acumulación desde', '<input type="date" name="settings[start]" value="' . esc_attr($s['start']) . '"> hasta <input type="date" name="settings[end]" value="' . esc_attr($s['end']) . '">', 'Se mira la fecha de creación del pedido.');
         $field('Porcentaje a acumular', '<input type="text" name="settings[percent]" value="' . esc_attr(str_replace('.', ',', (string) $s['percent'])) . '" size="5"> %', 'Sobre el importe de los productos del pedido sin IVA, sin envío y sin material promocional.');
+        $field('Códigos que sí permiten acumular', '<input type="text" name="settings[allowed_coupons]" value="' . esc_attr($s['allowed_coupons']) . '" class="regular-text">', 'Los pedidos con cualquier otro código de descuento no acumulan. Aquí va el cupón automático de transferencia (2DESCTF). Separados por comas.');
         $field('Unidades mínimas', '<input type="number" min="1" name="settings[min_units]" value="' . (int) $s['min_units'] . '" size="5">', 'Unidades que no sean material promocional ni regalos.');
         $field('Límite de uso por pedido', '<input type="text" name="settings[redeem_limit]" value="' . esc_attr(str_replace('.', ',', (string) $s['redeem_limit'])) . '" size="5"> %', 'Solo informativo por ahora: el canje todavía no está activo.');
         $field('Fecha límite de uso', '<input type="date" name="settings[expiry]" value="' . esc_attr($s['expiry']) . '">');
@@ -263,7 +264,11 @@ class Ivbc_Admin {
         if ($row && $row->status !== 'void') {
             echo '<p>Acumulado en la cartera: <strong>' . self::money($row->amount) . '</strong></p>';
         } else {
+            if (!empty($eval['blocked_by'])) {
+                echo '<p>No acumula: lleva el código de descuento <strong>' . esc_html(strtoupper(implode(', ', $eval['blocked_by']))) . '</strong>.</p>';
+            } else {
             echo '<p>' . ($eval['eligible'] ? 'Cumple las unidades, pero todavía no suma: el pedido tiene que estar procesando o completado (y dentro de campaña, con la cartera activa para este cliente).' : 'No acumula: no llega al mínimo de unidades.') . '</p>';
+            }
         }
         echo '<p><a class="button" href="' . esc_url(wp_nonce_url(admin_url('admin-post.php?action=ivbc_recalc&order_id=' . (int) $order->get_id()), 'ivbc_recalc')) . '">Recalcular</a></p>';
     }

@@ -91,7 +91,14 @@ class Ivbc_Frontend {
         $expiry  = self::date_es(Ivbc_Settings::get('expiry'));
         $pct     = rtrim(rtrim(number_format((float) $eval['pct'], 2, ',', ''), '0'), ',');
 
-        if ($eval['eligible']) {
+        if (!empty($eval['blocked_by'])) {
+            $codes = esc_html(strtoupper(implode(', ', $eval['blocked_by'])));
+            $title = 'Este pedido no acumula saldo en tu cartera IVB';
+            $text  = 'Lleva el código de descuento ' . $codes . ' y los pedidos con códigos de descuento no acumulan el ' . esc_html($pct) . ' %. '
+                . 'Si prefieres acumular, quita el código antes de pagar.';
+            $class = 'ivbc-notice';
+            $bar   = '';
+        } elseif ($eval['eligible']) {
             $title = 'Este pedido acumula ' . wc_price($eval['amount']) . ' en tu cartera IVB';
             $text  = 'Es el ' . esc_html($pct) . ' % del importe de tus productos, sin IVA ni material promocional. '
                 . 'Se suma a tu cartera cuando confirmemos el pago del pedido. Podrás usarlo como descuento en la campaña de Black Friday' . ($expiry ? ', hasta el ' . esc_html($expiry) : '') . '.';

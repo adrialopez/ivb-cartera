@@ -24,7 +24,21 @@ class Ivbc_Settings {
             'redeem_limit' => 20,
             'expiry'       => '2026-12-04',
             'redeem_note'  => 'Inicio del canje: pendiente de confirmación.',
+            // Códigos de descuento que NO bloquean la acumulación (el resto sí). Separados por comas.
+            'allowed_coupons' => '2desctf',
         );
+    }
+
+    /** Códigos permitidos en minúsculas. */
+    public static function allowed_coupons() {
+        $raw = (string) self::get('allowed_coupons');
+        $out = array();
+        foreach (preg_split('/[\s,;]+/', strtolower($raw)) as $c) {
+            if ($c !== '') {
+                $out[] = $c;
+            }
+        }
+        return $out;
     }
 
     public static function all() {
@@ -68,6 +82,7 @@ class Ivbc_Settings {
             'redeem_limit' => isset($in['redeem_limit']) ? max(0, min(100, (float) str_replace(',', '.', $in['redeem_limit']))) : $d['redeem_limit'],
             'expiry'       => $date(isset($in['expiry']) ? $in['expiry'] : '', $d['expiry']),
             'redeem_note'  => isset($in['redeem_note']) ? sanitize_text_field($in['redeem_note']) : $d['redeem_note'],
+            'allowed_coupons' => isset($in['allowed_coupons']) ? strtolower(sanitize_text_field($in['allowed_coupons'])) : $d['allowed_coupons'],
         );
     }
 }
