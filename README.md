@@ -19,7 +19,7 @@ Cartera de saldo para clientes B2B de profesional.ivbwellness.com (WooCommerce).
 
 ## Visibilidad e interruptores (1.3.0)
 - **Ganar saldo** y **Gastar saldo** se activan por separado (WooCommerce > Cartera IVB > Ajustes). Por defecto: ganar sí, gastar no (se activa cuando toque).
-- «Quién la ve»: `all` (por defecto desde 1.3.0: todos los clientes), `admins` (solo administradores, `manage_options`) u `off`. Al actualizar a 1.3.0 se pone en `all` y se apaga el modo de prueba (una sola vez; después manda lo que se guarde).
+- «Quién la ve»: `admins` (por defecto: solo administradores, `manage_options`; **los clientes no ven ni acumulan nada**), `all` (todos los clientes) u `off`. Para abrirla a los clientes: «Todos los clientes» y apagar el modo de prueba. Actualizar el plugin no cambia lo que ya estuviera guardado.
 - Con «Ganar saldo» apagado no se crean acumulaciones nuevas (las existentes se siguen anulando si el pedido se cancela o reembolsa). Con «Gastar saldo» apagado desaparecen el cupón, los avisos de uso y el bloque «Usar mi cartera». El modo de prueba permite a los administradores acumular fuera de fechas.
 - En un pedido editado a mano en el administrador, el recálculo conserva el importe gastado de ese pedido; no recalcules pedidos con cartera si puedes evitarlo.
 
@@ -35,4 +35,5 @@ Tabla `{prefix}ivbc_ledger` (una fila por apunte: acumulación `accrual`, ajuste
 - 1.2.3: el aviso del carrito pasa a prioridad 12 (orden: acelerador, tu escala, cartera, seguir comprando) y comparte estilo con los demás avisos.
 - 1.2.4: Mi cartera blindada frente al CSS de Betheme (márgenes y sangrías de listas): bloques alineados y con espacio entre ellos.
 - 1.2.5: Mi cartera sin el nombre de la campaña ni el texto de canje pendiente.
-- 1.3.0: cartera abierta a todos los clientes; interruptores independientes para ganar y para gastar; **gastar saldo en el carrito** (descuento automático hasta el 20 % del importe de los productos, opción de no usarlo en un pedido, devolución si el pedido se cancela); bloque «Usar mi cartera» y movimientos de saldo gastado en Mi cartera; fechas de uso (desde / hasta); administración con saldo gastado. Probado en un WooCommerce real (WordPress Playground): carrito, checkout con transferencia, procesando y cancelado.
+- 1.3.1: la cartera sigue **inactiva para los clientes** (por defecto solo administradores y modo de prueba); se retira el paso que la abría a todos al actualizar.
+- 1.3.0: interruptores independientes para ganar y para gastar; **gastar saldo en el carrito** (descuento automático hasta el 20 % del importe de los productos, opción de no usarlo en un pedido, devolución si el pedido se cancela); bloque «Usar mi cartera» y movimientos de saldo gastado en Mi cartera; fechas de uso (desde / hasta); administración con saldo gastado. Probado en un WooCommerce real (WordPress Playground): carrito, checkout con transferencia, procesando y cancelado.

@@ -13,9 +13,9 @@ class Ivbc_Settings {
     public static function defaults() {
         return array(
             // off = apagada | admins = solo administradores (pruebas) | all = todos los clientes
-            'mode'         => 'all',
+            'mode'         => 'admins',
             // En modo "admins" ignora las fechas de acumulación para poder probar fuera de campaña
-            'test_mode'    => 0,
+            'test_mode'    => 1,
             // Interruptores independientes: acumular saldo con los pedidos y gastarlo como descuento en el carrito
             'earn'         => 1,
             'spend'        => 0,
@@ -29,20 +29,6 @@ class Ivbc_Settings {
             'redeem_limit' => 20,
             'expiry'       => '2026-12-04',
         );
-    }
-
-    /** 1.3.0: la cartera pasa a estar abierta a todos los clientes (una sola vez; después manda lo que se guarde en Ajustes). */
-    public static function maybe_migrate() {
-        if (get_option('ivbc_130_open') === 'yes') {
-            return;
-        }
-        $saved = get_option(self::OPTION, array());
-        if (is_array($saved) && $saved) {
-            $saved['mode']      = 'all';
-            $saved['test_mode'] = 0;
-            update_option(self::OPTION, $saved, false);
-        }
-        update_option('ivbc_130_open', 'yes', false);
     }
 
     public static function all() {
