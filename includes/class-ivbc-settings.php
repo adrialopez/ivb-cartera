@@ -12,10 +12,15 @@ class Ivbc_Settings {
 
     public static function defaults() {
         return array(
-            // off = apagado | admins = solo administradores (pruebas) | all = todos los clientes
-            'mode'         => 'admins',
-            // En modo "admins" ignora las fechas de acumulación para poder probar antes del 16/10
-            'test_mode'    => 1,
+            // off = apagada | admins = solo administradores (pruebas) | all = todos los clientes
+            'mode'         => 'all',
+            // En modo "admins" ignora las fechas de acumulación para poder probar fuera de campaña
+            'test_mode'    => 0,
+            // Interruptores independientes: acumular saldo con los pedidos y gastarlo como descuento en el carrito
+            'earn'         => 1,
+            'spend'        => 0,
+            // Primer día en que se puede gastar (vacío = ya) y último (fecha límite de uso)
+            'redeem_start' => '',
             'campaign'     => 'PREBLACK',
             'start'        => '2026-10-16',
             'end'          => '2026-10-31',
@@ -24,6 +29,20 @@ class Ivbc_Settings {
             'redeem_limit' => 20,
             'expiry'       => '2026-12-04',
         );
+    }
+
+    /** 1.3.0: la cartera pasa a estar abierta a todos los clientes (una sola vez; después manda lo que se guarde en Ajustes). */
+    public static function maybe_migrate() {
+        if (get_option('ivbc_130_open') === 'yes') {
+            return;
+        }
+        $saved = get_option(self::OPTION, array());
+        if (is_array($saved) && $saved) {
+            $saved['mode']      = 'all';
+            $saved['test_mode'] = 0;
+            update_option(self::OPTION, $saved, false);
+        }
+        update_option('ivbc_130_open', 'yes', false);
     }
 
     public static function all() {
@@ -59,6 +78,9 @@ class Ivbc_Settings {
         return array(
             'mode'         => $mode,
             'test_mode'    => empty($in['test_mode']) ? 0 : 1,
+            'earn'         => empty($in['earn']) ? 0 : 1,
+            'spend'        => empty($in['spend']) ? 0 : 1,
+            'redeem_start' => $date(isset($in['redeem_start']) ? $in['redeem_start'] : '', ''),
             'campaign'     => isset($in['campaign']) ? sanitize_text_field($in['campaign']) : $d['campaign'],
             'start'        => $date(isset($in['start']) ? $in['start'] : '', $d['start']),
             'end'          => $date(isset($in['end']) ? $in['end'] : '', $d['end']),

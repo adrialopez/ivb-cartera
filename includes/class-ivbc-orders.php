@@ -49,40 +49,75 @@ class Ivbc_Orders {
             return null;
         }
         $user_id = (int) $order->get_customer_id();
-        if (!$user_id || !Ivbc_Rules::enabled_for_user($user_id)) {
+        if (!$user_id) {
             return null;
         }
-
         self::$running = true;
         try {
-            $order_id = (int) $order->get_id();
-            $created  = $order->get_date_created();
-            $ts       = $created ? $created->getTimestamp() : time();
-            $eval     = Ivbc_Rules::evaluate_order($order);
-
-            // Reembolsos parciales: se descuenta lo devuelto de la base
-            $refunded = max(0.0, (float) $order->get_total_refunded() - (float) $order->get_total_tax_refunded() - (float) $order->get_total_shipping_refunded());
-            if ($refunded > 0) {
-                $base           = max(0.0, $eval['base'] - $refunded);
-                $eval['base']   = round($base, 2);
-                $eval['amount'] = $eval['eligible'] ? round($base * $eval['pct'] / 100, 2) : 0.0;
-            }
-
-            $status = self::target_status($order);
-            if ($status === 'wait') {
-                // Sin pago confirmado no hay saldo. Si el pedido vuelve atrás desde procesando, se retira.
-                Ivbc_Ledger::void_accrual($order_id);
-                $result = array('state' => 'wait', 'eval' => $eval);
-            } elseif ($status === 'void' || !Ivbc_Rules::in_window($ts, $user_id) || !$eval['eligible'] || $eval['amount'] <= 0) {
-                Ivbc_Ledger::void_accrual($order_id);
-                $result = array('state' => 'void', 'eval' => $eval);
-            } else {
-                Ivbc_Ledger::save_accrual($order_id, $user_id, $status, $eval['amount'], $eval['base'], $eval['units'], (string) Ivbc_Settings::get('campaign'));
-                $result = array('state' => $status, 'eval' => $eval);
-            }
+            self::sync_redeem($order, $user_id);
+            return self::sync_accrual($order, $user_id);
         } finally {
             self::$running = false;
         }
-        return $result;
+    }
+
+    /**
+     * Saldo gastado en el pedido (cupón «ivbc-cartera»): se descuenta del saldo mientras el pedido siga vivo y se devuelve si se cancela o falla.
+     * Funciona aunque la cartera ya no esté visible: el saldo siempre tiene que cuadrar con los pedidos.
+     */
+    private static function sync_redeem($order, $user_id) {
+        $order_id = (int) $order->get_id();
+        $amount   = 0.0;
+        foreach ($order->get_items('coupon') as $item) {
+            if (strtolower((string) $item->get_code()) === Ivbc_Spend::CODE) {
+                $amount += (float) $item->get_discount();
+            }
+        }
+        $existing = Ivbc_Ledger::get_redeem($order_id);
+        if ($amount > 0.004) {
+            if (in_array($order->get_status(), array('cancelled', 'failed', 'refunded', 'trash'), true)) {
+                Ivbc_Ledger::void_redeem($order_id);
+            } else {
+                Ivbc_Ledger::save_redeem($order_id, $user_id, 'confirmed', $amount);
+            }
+        } elseif ($existing && $existing->status !== 'void') {
+            Ivbc_Ledger::void_redeem($order_id);
+        }
+    }
+
+    /** Apunte de acumulación del pedido (ver las reglas en la cabecera de la clase). */
+    private static function sync_accrual($order, $user_id) {
+        if (!Ivbc_Rules::enabled_for_user($user_id)) {
+            return null;
+        }
+        $order_id = (int) $order->get_id();
+        // con «Ganar saldo» desactivado no se crean acumulaciones nuevas, pero las que ya existen se siguen anulando si el pedido se cancela o se reembolsa
+        if (!Ivbc_Rules::earn_on() && !Ivbc_Ledger::get_accrual($order_id)) {
+            return null;
+        }
+        $created = $order->get_date_created();
+        $ts      = $created ? $created->getTimestamp() : time();
+        $eval    = Ivbc_Rules::evaluate_order($order);
+
+        // Reembolsos parciales: se descuenta lo devuelto de la base
+        $refunded = max(0.0, (float) $order->get_total_refunded() - (float) $order->get_total_tax_refunded() - (float) $order->get_total_shipping_refunded());
+        if ($refunded > 0) {
+            $base           = max(0.0, $eval['base'] - $refunded);
+            $eval['base']   = round($base, 2);
+            $eval['amount'] = $eval['eligible'] ? round($base * $eval['pct'] / 100, 2) : 0.0;
+        }
+
+        $status = self::target_status($order);
+        if ($status === 'wait') {
+            // Sin pago confirmado no hay saldo. Si el pedido vuelve atrás desde procesando, se retira.
+            Ivbc_Ledger::void_accrual($order_id);
+            return array('state' => 'wait', 'eval' => $eval);
+        }
+        if ($status === 'void' || !Ivbc_Rules::in_window($ts, $user_id) || !$eval['eligible'] || $eval['amount'] <= 0) {
+            Ivbc_Ledger::void_accrual($order_id);
+            return array('state' => 'void', 'eval' => $eval);
+        }
+        Ivbc_Ledger::save_accrual($order_id, $user_id, $status, $eval['amount'], $eval['base'], $eval['units'], (string) Ivbc_Settings::get('campaign'));
+        return array('state' => $status, 'eval' => $eval);
     }
 }

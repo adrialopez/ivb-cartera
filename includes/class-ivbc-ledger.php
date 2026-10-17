@@ -2,9 +2,9 @@
 /**
  * Libro de movimientos de la cartera. Una fila por apunte.
  *
- * type:   accrual (acumulado por un pedido) | adjust (ajuste manual) | redeem (canje, futuro)
- * status: pending (pedido sin pagar) | confirmed (pedido pagado o ajuste) | void (anulado)
- * El saldo disponible es la suma de los apuntes en estado confirmed.
+ * type:   accrual (acumulado por un pedido) | adjust (ajuste manual) | redeem (saldo gastado en un pedido, importe negativo)
+ * status: pending (pedido sin pagar) | confirmed (pedido pagado, ajuste o saldo gastado) | void (anulado)
+ * El saldo disponible es la suma de los apuntes en estado confirmed (los canjes restan desde que se hace el pedido).
  */
 if (!defined('ABSPATH')) {
     exit;
@@ -97,6 +97,48 @@ class Ivbc_Ledger {
                 array('status' => 'void', 'updated_gmt' => current_time('mysql', true)),
                 array('id' => $existing->id)
             );
+        }
+    }
+
+    public static function get_redeem($order_id) {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare(
+            'SELECT * FROM ' . self::table() . " WHERE order_id = %d AND type = 'redeem' ORDER BY id DESC LIMIT 1",
+            $order_id
+        ));
+    }
+
+    /** Crea o actualiza el apunte de saldo gastado en un pedido ($amount en positivo; se guarda en negativo). */
+    public static function save_redeem($order_id, $user_id, $status, $amount) {
+        global $wpdb;
+        $now      = current_time('mysql', true);
+        $existing = self::get_redeem($order_id);
+        $data     = array(
+            'user_id'     => (int) $user_id,
+            'status'      => $status,
+            'amount'      => -abs(round((float) $amount, 2)),
+            'campaign'    => (string) Ivbc_Settings::get('campaign'),
+            'updated_gmt' => $now,
+        );
+        if ($existing) {
+            if ($existing->status !== $status || abs((float) $existing->amount - $data['amount']) > 0.004 || (int) $existing->user_id !== $data['user_id']) {
+                $wpdb->update(self::table(), $data, array('id' => $existing->id));
+            }
+            return (int) $existing->id;
+        }
+        $data['order_id']    = (int) $order_id;
+        $data['type']        = 'redeem';
+        $data['created_gmt'] = $now;
+        $wpdb->insert(self::table(), $data);
+        return (int) $wpdb->insert_id;
+    }
+
+    /** Devuelve el saldo gastado en un pedido (anula el apunte). */
+    public static function void_redeem($order_id) {
+        global $wpdb;
+        $existing = self::get_redeem($order_id);
+        if ($existing && $existing->status !== 'void') {
+            $wpdb->update(self::table(), array('status' => 'void', 'updated_gmt' => current_time('mysql', true)), array('id' => $existing->id));
         }
     }
 
@@ -199,6 +241,12 @@ class Ivbc_Ledger {
             'customers' => $row ? (int) $row->customers : 0,
             'orders'    => $row ? (int) $row->orders : 0,
         );
+    }
+
+    /** Total de saldo gastado en pedidos (en positivo). */
+    public static function redeemed_total() {
+        global $wpdb;
+        return abs((float) $wpdb->get_var('SELECT COALESCE(SUM(amount), 0) FROM ' . self::table() . " WHERE type = 'redeem' AND status = 'confirmed'"));
     }
 
     public static function all_rows($limit = 20000) {

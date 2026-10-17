@@ -59,6 +59,7 @@ class Ivbc_Admin {
         self::notices();
         $mode = Ivbc_Rules::mode();
         echo '<div class="ivbc-modebar ivbc-modebar--' . esc_attr($mode) . '"><strong>Estado:</strong> ' . esc_html(self::mode_label())
+            . ' &middot; ganar saldo: <strong>' . (Ivbc_Rules::earn_on() ? 'sí' : 'no') . '</strong> &middot; gastar saldo: <strong>' . (Ivbc_Rules::spend_on() ? 'sí' : 'no') . '</strong>'
             . ' &middot; campaña ' . esc_html((string) Ivbc_Settings::get('campaign')) . ' del ' . esc_html(Ivbc_Frontend::date_es(Ivbc_Settings::get('start')))
             . ' al ' . esc_html(Ivbc_Frontend::date_es(Ivbc_Settings::get('end'))) . '</div>';
         echo '<h2 class="nav-tab-wrapper"><a class="nav-tab' . ($tab === 'clientes' ? ' nav-tab-active' : '') . '" href="' . esc_url(self::url()) . '">Clientes</a>'
@@ -91,7 +92,8 @@ class Ivbc_Admin {
         echo '<div class="ivbc-kpis">'
             . '<div class="ivbc-kpi"><span>Saldo confirmado</span><strong>' . self::money($t['confirmed']) . '</strong></div>'
             . '<div class="ivbc-kpi"><span>Clientes con saldo</span><strong>' . (int) $t['customers'] . '</strong></div>'
-            . '<div class="ivbc-kpi"><span>Pedidos que acumulan</span><strong>' . (int) $t['orders'] . '</strong></div></div>';
+            . '<div class="ivbc-kpi"><span>Pedidos que acumulan</span><strong>' . (int) $t['orders'] . '</strong></div>'
+            . '<div class="ivbc-kpi"><span>Saldo gastado en pedidos</span><strong>' . self::money(Ivbc_Ledger::redeemed_total()) . '</strong></div></div>';
 
         echo '<form method="get" class="ivbc-search"><input type="hidden" name="page" value="' . esc_attr(self::SLUG) . '">'
             . '<input type="search" name="s" value="' . esc_attr($search) . '" placeholder="Buscar por nombre, empresa o correo"> '
@@ -141,7 +143,7 @@ class Ivbc_Admin {
         }
         foreach ($rows as $r) {
             $order = $r->order_id ? '<a href="' . esc_url(get_edit_post_link((int) $r->order_id) ?: admin_url('admin.php?page=wc-orders&action=edit&id=' . (int) $r->order_id)) . '">#' . (int) $r->order_id . '</a>' : '';
-            echo '<tr><td>' . esc_html(get_date_from_gmt($r->created_gmt, 'd/m/Y H:i')) . '</td><td>' . esc_html($r->type === 'accrual' ? 'Acumulación' : ($r->type === 'adjust' ? 'Ajuste' : $r->type)) . '</td>'
+            echo '<tr><td>' . esc_html(get_date_from_gmt($r->created_gmt, 'd/m/Y H:i')) . '</td><td>' . esc_html($r->type === 'accrual' ? 'Acumulación' : ($r->type === 'adjust' ? 'Ajuste' : ($r->type === 'redeem' ? 'Saldo gastado' : $r->type))) . '</td>'
                 . '<td>' . $order . '</td><td>' . ($r->units !== null ? (int) $r->units : '') . '</td><td>' . ($r->base !== null ? self::money($r->base) : '') . '</td>'
                 . '<td><span class="ivbc-pill ivbc-pill--' . esc_attr($r->status) . '">' . esc_html($r->status === 'confirmed' ? 'Confirmado' : 'Anulado') . '</span></td>'
                 . '<td class="num">' . self::money($r->amount) . '</td><td>' . esc_html($r->note) . '</td></tr>';
@@ -168,14 +170,16 @@ class Ivbc_Admin {
         foreach (array('admins' => 'Solo administradores (pruebas)', 'all' => 'Todos los clientes', 'off' => 'Apagada') as $k => $l) {
             $opts .= '<option value="' . esc_attr($k) . '"' . selected($s['mode'], $k, false) . '>' . esc_html($l) . '</option>';
         }
-        $field('Quién la ve', '<select name="settings[mode]">' . $opts . '</select>', 'En "Solo administradores" nada cambia para los clientes: ni avisos, ni saldo, ni acumulación.');
+        $field('Ganar saldo', '<label><input type="checkbox" name="settings[earn]" value="1"' . checked(!empty($s['earn']), true, false) . '> Los pedidos que cumplan la campaña acumulan saldo en la cartera</label>', 'Si lo desactivas no se crean acumulaciones nuevas; el saldo ya acumulado se conserva (y se sigue anulando si un pedido se cancela o se reembolsa).');
+        $field('Gastar saldo', '<label><input type="checkbox" name="settings[spend]" value="1"' . checked(!empty($s['spend']), true, false) . '> Los clientes pueden gastar su saldo como descuento en el carrito</label>', 'El descuento se aplica solo en el carrito (lo máximo que se pueda, según el límite por pedido) y el cliente puede quitarlo en cada pedido.');
+        $field('Quién la ve', '<select name="settings[mode]">' . $opts . '</select>', 'En "Solo administradores" nada cambia para los clientes: ni avisos, ni saldo, ni acumulación, ni gasto.');
         $field('Modo de prueba', '<label><input type="checkbox" name="settings[test_mode]" value="1"' . checked(!empty($s['test_mode']), true, false) . '> Los administradores acumulan aunque la fecha esté fuera de la campaña</label>', 'Solo afecta a administradores. Apágalo antes de abrir la cartera a todos.');
         $field('Nombre de la campaña', '<input type="text" name="settings[campaign]" value="' . esc_attr($s['campaign']) . '" class="regular-text">');
         $field('Acumulación desde', '<input type="date" name="settings[start]" value="' . esc_attr($s['start']) . '"> hasta <input type="date" name="settings[end]" value="' . esc_attr($s['end']) . '">', 'Se mira la fecha de creación del pedido.');
         $field('Porcentaje a acumular', '<input type="text" name="settings[percent]" value="' . esc_attr(str_replace('.', ',', (string) $s['percent'])) . '" size="5"> %', 'Sobre el importe de los productos del pedido sin IVA, sin envío y sin material promocional.');
         $field('Unidades mínimas', '<input type="number" min="1" name="settings[min_units]" value="' . (int) $s['min_units'] . '" size="5">', 'Unidades que no sean material promocional ni regalos.');
-        $field('Límite de uso por pedido', '<input type="text" name="settings[redeem_limit]" value="' . esc_attr(str_replace('.', ',', (string) $s['redeem_limit'])) . '" size="5"> %', 'Solo informativo por ahora: el canje todavía no está activo.');
-        $field('Fecha límite de uso', '<input type="date" name="settings[expiry]" value="' . esc_attr($s['expiry']) . '">');
+        $field('Límite de uso por pedido', '<input type="text" name="settings[redeem_limit]" value="' . esc_attr(str_replace('.', ',', (string) $s['redeem_limit'])) . '" size="5"> %', 'Máximo del importe de los productos del pedido (sin IVA, sin material promocional) que se puede pagar con saldo.');
+        $field('Se puede gastar desde / hasta', '<input type="date" name="settings[redeem_start]" value="' . esc_attr($s['redeem_start']) . '"> hasta <input type="date" name="settings[expiry]" value="' . esc_attr($s['expiry']) . '">', 'Deja vacío el «desde» para que se pueda gastar en cuanto se active «Gastar saldo». El «hasta» es la fecha límite de uso.');
         echo '</tbody></table><p><button class="button button-primary">Guardar ajustes</button></p></form>';
     }
 
@@ -257,7 +261,13 @@ class Ivbc_Admin {
             return;
         }
         $row  = Ivbc_Ledger::get_accrual($order->get_id());
+        $rd   = Ivbc_Ledger::get_redeem($order->get_id());
         $eval = Ivbc_Rules::evaluate_order($order);
+        if ($rd && $rd->status !== 'void') {
+            echo '<p>Saldo gastado en este pedido: <strong>' . self::money(abs((float) $rd->amount)) . '</strong> (descuento «Cartera IVB»).</p>';
+        } elseif ($rd) {
+            echo '<p>Saldo gastado devuelto (pedido cancelado o fallido).</p>';
+        }
         echo '<p>Unidades que cuentan: <strong>' . (int) $eval['units'] . '</strong> de ' . (int) $eval['min'] . ' (sin material promocional ni regalos).<br>Base: ' . self::money($eval['base']) . '</p>';
         if ($row && $row->status !== 'void') {
             echo '<p>Acumulado en la cartera: <strong>' . self::money($row->amount) . '</strong></p>';

@@ -53,7 +53,17 @@ class Ivbc_Frontend {
     }
 
     private static function campaign_open_now() {
-        return self::user_ok() && Ivbc_Rules::in_window(time(), get_current_user_id());
+        return self::user_ok() && Ivbc_Rules::earn_on() && Ivbc_Rules::in_window(time(), get_current_user_id());
+    }
+
+    /** Frase de «para qué sirve el saldo»: con «Gastar saldo» activo explica cómo se usa; si no, mantiene el texto de la campaña. */
+    public static function use_text($expiry) {
+        if (Ivbc_Rules::spend_on()) {
+            $start = (string) Ivbc_Settings::get('redeem_start');
+            $from  = ($start !== '' && time() < Ivbc_Settings::ts($start)) ? ' a partir del ' . esc_html(self::date_es($start)) : '';
+            return 'Podrás usarlo como descuento en tus pedidos' . $from . ($expiry ? ', hasta el ' . esc_html($expiry) : '') . '.';
+        }
+        return 'Podrás usarlo como descuento en la campaña de Black Friday' . ($expiry ? ', hasta el ' . esc_html($expiry) : '') . '.';
     }
 
     public static function date_es($ymd) {
@@ -96,7 +106,7 @@ class Ivbc_Frontend {
         if ($eval['eligible']) {
             $title = 'Este pedido acumula ' . wc_price($eval['amount']) . ' en tu cartera IVB';
             $text  = 'Es el ' . esc_html($pct) . ' % del importe de tus productos, sin IVA ni material promocional. '
-                . 'Se suma a tu cartera cuando confirmemos el pago del pedido. Podrás usarlo como descuento en la campaña de Black Friday' . ($expiry ? ', hasta el ' . esc_html($expiry) : '') . '.';
+                . 'Se suma a tu cartera cuando confirmemos el pago del pedido. ' . self::use_text($expiry);
             $class = 'ivbc-notice ivbc-notice--ok';
             $bar   = '';
         } else {
@@ -162,7 +172,7 @@ class Ivbc_Frontend {
         if ($row && $row->status === 'confirmed' && (float) $row->amount > 0) {
             return array('confirmed', (float) $row->amount);
         }
-        if (in_array($order->get_status(), array('pending', 'on-hold'), true)) {
+        if (Ivbc_Rules::earn_on() && in_array($order->get_status(), array('pending', 'on-hold'), true)) {
             $created = $order->get_date_created();
             $eval    = Ivbc_Rules::evaluate_order($order);
             if ($eval['eligible'] && $eval['amount'] > 0 && Ivbc_Rules::in_window($created ? $created->getTimestamp() : time(), $uid)) {
@@ -188,7 +198,7 @@ class Ivbc_Frontend {
         $text  = $state === 'confirmed' ? 'Ya está en tu cartera. ' : 'Se sumará cuando confirmemos el pago del pedido. ';
         echo '<div class="ivbc-notice ivbc-notice--ok ivbc-notice--thanks"><span class="ivbc-notice__ico">' . self::icon('wallet') . '</span>'
             . '<div class="ivbc-notice__body"><strong class="ivbc-notice__title">' . $title . '</strong>'
-            . '<span class="ivbc-notice__text">' . $text . 'Podrás usarlo como descuento en la campaña de Black Friday' . ($expiry ? ', hasta el ' . esc_html($expiry) : '') . '.</span>'
+            . '<span class="ivbc-notice__text">' . $text . self::use_text($expiry) . '</span>'
             . '<span class="ivbc-notice__bal"><a href="' . esc_url(wc_get_account_endpoint_url(self::ENDPOINT)) . '">Ver mi cartera</a></span></div></div>'; // phpcs:ignore WordPress.Security.EscapeOutput
     }
 
@@ -204,12 +214,12 @@ class Ivbc_Frontend {
         $expiry = self::date_es(Ivbc_Settings::get('expiry'));
         $verb   = $state === 'confirmed' ? 'te ha acumulado' : 'te acumulará, cuando confirmemos el pago,';
         if ($plain_text) {
-            echo "\n" . sprintf('Este pedido %s %s en tu cartera IVB para la campaña de Black Friday%s.', $verb, wp_strip_all_tags(wc_price($amount)), $expiry ? ' (hasta el ' . $expiry . ')' : '') . "\n";
+            echo "\n" . sprintf('Este pedido %s %s en tu cartera IVB. %s', $verb, wp_strip_all_tags(wc_price($amount)), wp_strip_all_tags(self::use_text($expiry))) . "\n";
             return;
         }
         echo '<p style="margin:16px 0;padding:12px 14px;background:#eef3f6;border-left:4px solid #4d738a;color:#1f3340;">'
             . '<strong>Este pedido ' . esc_html($verb) . ' ' . wp_kses_post(wc_price($amount)) . ' en tu cartera IVB</strong><br>'
-            . 'Podrás usarlo como descuento en la campaña de Black Friday' . ($expiry ? ', hasta el ' . esc_html($expiry) : '') . '.</p>';
+            . self::use_text($expiry) . '</p>';
     }
 
     /* ---------- Mi cuenta ---------- */
@@ -251,8 +261,38 @@ class Ivbc_Frontend {
         if ($expiry) {
             $out .= '<li>' . self::icon('tag') . '<span>Utilizable hasta el <strong>' . esc_html($expiry) . '</strong></span></li>';
         }
-        $out .= '<li>' . self::icon('bag') . '<span>Límite de uso: <strong>' . esc_html($limit) . ' %</strong> del importe de cada pedido</span></li>';
+        if (Ivbc_Rules::spend_on()) {
+            $out .= '<li>' . self::icon('bag') . '<span>Límite de uso: <strong>' . esc_html($limit) . ' %</strong> del importe de los productos de cada pedido</span></li>';
+        }
         return '<ul class="ivbc-chips">' . $out . '</ul>';
+    }
+
+    /** Bloque «Usar mi cartera» de la página Mi cartera. */
+    private static function spend_card($balance) {
+        if (!Ivbc_Rules::spend_on()) {
+            return '';
+        }
+        $limit  = rtrim(rtrim(number_format(Ivbc_Spend::limit_pct(), 2, ',', ''), '0'), ',');
+        $expiry = self::date_es(Ivbc_Settings::get('expiry'));
+        $start  = (string) Ivbc_Settings::get('redeem_start');
+        $future = $start !== '' && time() < Ivbc_Settings::ts($start);
+        $open   = Ivbc_Rules::spend_open(get_current_user_id());
+        $avail  = Ivbc_Spend::available(get_current_user_id());
+        $body   = 'Tu saldo se descuenta solo en el carrito: se resta lo máximo que se pueda, hasta el <strong>' . esc_html($limit) . ' %</strong> del importe de los productos de cada pedido (sin IVA ni material promocional). Si prefieres no usarlo en un pedido, puedes quitarlo desde el carrito.';
+        if ($future) {
+            $state = 'Podrás usar tu cartera a partir del ' . esc_html(self::date_es($start)) . '.';
+            $cta   = '';
+        } elseif (!$open) {
+            $state = 'El plazo para usar la cartera ha terminado' . ($expiry ? ' (' . esc_html($expiry) . ')' : '') . '.';
+            $cta   = '';
+        } elseif ($avail <= 0) {
+            $state = 'Ahora mismo no tienes saldo disponible.';
+            $cta   = '';
+        } else {
+            $state = 'Tienes <strong>' . wc_price($avail) . '</strong> disponibles' . ($expiry ? ' hasta el ' . esc_html($expiry) : '') . '.';
+            $cta   = '<p><a class="button" href="' . esc_url(wc_get_cart_url()) . '">Ir al carrito</a></p>';
+        }
+        return '<h3 class="ivbc-h">Usar mi cartera</h3><div class="ivbc-spend"><p>' . $state . '</p><p>' . $body . '</p>' . $cta . '</div>';
     }
 
     public static function render_account() {
@@ -273,10 +313,11 @@ class Ivbc_Frontend {
             . '<span class="ivbc-hero__ico">' . self::icon('wallet') . '</span></div>'; // phpcs:ignore WordPress.Security.EscapeOutput
         echo self::chips($balance); // phpcs:ignore WordPress.Security.EscapeOutput
 
+        echo self::spend_card($balance); // phpcs:ignore WordPress.Security.EscapeOutput
         echo '<h3 class="ivbc-h">Cómo funciona</h3><ol class="ivbc-steps">'
             . '<li>' . self::icon('bag') . '<strong>Compra</strong><span>' . self::period_text() . 'pedidos de al menos ' . $min . ' unidades.</span></li>'
             . '<li>' . self::icon('plus') . '<strong>Acumula</strong><span>El ' . esc_html($pct) . ' % del importe de cada pedido válido va a tu cartera.</span></li>'
-            . '<li>' . self::icon('tag') . '<strong>Aprovecha</strong><span>Úsalo como descuento en la campaña de Black Friday.</span></li>'
+            . '<li>' . self::icon('tag') . '<strong>Aprovecha</strong><span>' . (Ivbc_Rules::spend_on() ? 'Se descuenta solo en el carrito, hasta el ' . esc_html(self::date_es(Ivbc_Settings::get('expiry'))) . '.' : 'Úsalo como descuento en la campaña de Black Friday.') . '</span></li>'
             . '</ol>';
 
         echo '<h3 class="ivbc-h">Movimientos</h3>';
@@ -284,12 +325,19 @@ class Ivbc_Frontend {
             echo '<p class="ivbc-empty">Todavía no tienes movimientos. Cuando hagas un pedido que cumpla las condiciones, aparecerá aquí.</p>';
         } else {
             $labels = array('confirmed' => 'Confirmado', 'void' => 'Anulado');
+            $url    = function ($oid) {
+                return esc_url(wc_get_endpoint_url('view-order', $oid, wc_get_page_permalink('myaccount')));
+            };
             echo '<ul class="ivbc-moves">';
             foreach ($rows as $r) {
                 $ts   = strtotime($r->created_gmt . ' UTC');
-                $conc = $r->type === 'accrual'
-                    ? 'Acumulado en el pedido <a href="' . esc_url(wc_get_endpoint_url('view-order', $r->order_id, wc_get_page_permalink('myaccount'))) . '">#' . (int) $r->order_id . '</a>'
-                    : esc_html($r->note !== '' ? $r->note : 'Ajuste');
+                if ($r->type === 'accrual') {
+                    $conc = 'Acumulado en el pedido <a href="' . $url($r->order_id) . '">#' . (int) $r->order_id . '</a>';
+                } elseif ($r->type === 'redeem') {
+                    $conc = ($r->status === 'void' ? 'Devuelto: pedido ' : 'Usado en el pedido ') . '<a href="' . $url($r->order_id) . '">#' . (int) $r->order_id . '</a>';
+                } else {
+                    $conc = esc_html($r->note !== '' ? $r->note : 'Ajuste');
+                }
                 $meta = esc_html(wp_date('d/m/Y', $ts)) . ($r->type === 'accrual' ? ' &middot; ' . (int) $r->units . ' unidades' : '');
                 echo '<li class="ivbc-move ivbc-' . esc_attr($r->status) . '"><div class="ivbc-move__main"><span class="ivbc-move__title">' . $conc . '</span>'
                     . '<span class="ivbc-move__meta">' . $meta . '</span></div>'
