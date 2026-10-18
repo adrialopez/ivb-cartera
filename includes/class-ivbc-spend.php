@@ -38,7 +38,7 @@ class Ivbc_Spend {
         add_action('woocommerce_before_checkout_form', array(__CLASS__, 'sync'), 5);
         add_action('woocommerce_checkout_update_order_review', array(__CLASS__, 'sync'), 99);
 
-        add_action('template_redirect', array(__CLASS__, 'handle_toggle'), 5);
+        add_action('template_redirect', array(__CLASS__, 'handle_toggle'), -1); // antes que WooCommerce AJAX (prioridad 0): enlaces antiguos guardados en el navegador apuntan a ?wc-ajax=…
         add_action('woocommerce_before_cart', array(__CLASS__, 'echo_notice'), 12);
         add_action('woocommerce_before_checkout_form', array(__CLASS__, 'echo_notice'), 21);
         add_filter('woocommerce_update_order_review_fragments', array(__CLASS__, 'fragment'));
@@ -193,6 +193,12 @@ class Ivbc_Spend {
         $off = sanitize_key(wp_unslash($_GET['ivbc_wallet'])) === 'off';
         WC()->session->set(self::SESSION_OFF, $off ? 1 : 0);
         self::sync();
+        if (isset($_GET['wc-ajax'])) { // enlace antiguo (cacheado) que apuntaba a la URL AJAX de fragmentos: se vuelve a la página del carrito
+            $ref = wp_get_referer();
+            $to  = ($ref && wp_parse_url($ref, PHP_URL_HOST) === wp_parse_url(home_url(), PHP_URL_HOST)) ? remove_query_arg(array('ivbc_wallet', '_wpnonce', 'wc-ajax'), $ref) : wc_get_cart_url();
+            wp_safe_redirect($to);
+            exit;
+        }
         wp_safe_redirect(remove_query_arg(array('ivbc_wallet', '_wpnonce')));
         exit;
     }
