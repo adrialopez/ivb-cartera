@@ -214,8 +214,10 @@ class Ivbc_Spend {
             return '<a href="' . esc_url(wp_nonce_url(add_query_arg('ivbc_wallet', $state), self::NONCE)) . '">' . esc_html($label) . '</a>';
         };
         if ($applied) {
-            $used  = (float) $cart->get_coupon_discount_amount(self::CODE, true);
-            $title = 'Se han descontado ' . wc_price($used) . ' de tu cartera IVB en este pedido';
+            $used  = (float) $cart->get_coupon_discount_amount(self::CODE, true);   // sin IVA: lo que sale de tu saldo
+            $inc   = (float) $cart->get_coupon_discount_amount(self::CODE, false);  // con IVA: como lo enseña el resumen si los precios se muestran con IVA
+            $title = 'Se han descontado ' . wc_price($used) . ' de tu cartera IVB en este pedido'
+                . (abs($inc - $used) > 0.004 ? ' (' . wc_price($inc) . ' con IVA, como aparece en el resumen)' : '');
             $text  = 'Es el máximo que se puede usar: el ' . esc_html($pct) . ' % del importe de tus productos (sin IVA ni material promocional)'
                 . ($avail - $used > 0.004 ? ', y te quedan ' . wc_price(max(0.0, $avail - $used)) . ' para otros pedidos' : '') . '.'
                 . (Ivbc_Frontend::window_text($expiry) !== '' ? ' Disponible' . Ivbc_Frontend::window_text($expiry) . '.' : '');
