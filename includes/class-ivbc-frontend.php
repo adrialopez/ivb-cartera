@@ -59,11 +59,17 @@ class Ivbc_Frontend {
     /** Frase de «para qué sirve el saldo»: con «Gastar saldo» activo explica cómo se usa; si no, mantiene el texto de la campaña. */
     public static function use_text($expiry) {
         if (Ivbc_Rules::spend_on()) {
-            $start = (string) Ivbc_Settings::get('redeem_start');
-            $from  = ($start !== '' && time() < Ivbc_Settings::ts($start)) ? ' a partir del ' . esc_html(self::date_es($start)) : '';
-            return 'Podrás usarlo como descuento en tus pedidos' . $from . ($expiry ? ', hasta el ' . esc_html($expiry) : '') . '.';
+            return 'Podrás usarlo como descuento en tus pedidos' . self::window_text($expiry) . '.';
         }
         return 'Podrás usarlo como descuento en la campaña de Black Friday' . ($expiry ? ', hasta el ' . esc_html($expiry) : '') . '.';
+    }
+
+    /** «desde el X hasta el Y» (periodo en que se puede gastar); cada extremo solo si está definido. */
+    public static function window_text($expiry = null) {
+        $expiry = $expiry === null ? self::date_es(Ivbc_Settings::get('expiry')) : $expiry;
+        $start  = (string) Ivbc_Settings::get('redeem_start');
+        $from   = $start !== '' ? esc_html(self::date_es($start)) : '';
+        return ($from ? ' desde el ' . $from : '') . ($expiry ? ($from ? ' hasta el ' : ' hasta el ') . esc_html($expiry) : '');
     }
 
     public static function date_es($ymd) {
@@ -259,7 +265,7 @@ class Ivbc_Frontend {
         $limit  = rtrim(rtrim(number_format((float) Ivbc_Settings::get('redeem_limit'), 2, ',', ''), '0'), ',');
         $out    = '';
         if ($expiry) {
-            $out .= '<li>' . self::icon('tag') . '<span>Utilizable hasta el <strong>' . esc_html($expiry) . '</strong></span></li>';
+            $out .= '<li>' . self::icon('tag') . '<span>Utilizable<strong>' . self::window_text($expiry) . '</strong></span></li>';
         }
         if (Ivbc_Rules::spend_on()) {
             $out .= '<li>' . self::icon('bag') . '<span>Límite de uso: <strong>' . esc_html($limit) . ' %</strong> del importe de los productos de cada pedido</span></li>';

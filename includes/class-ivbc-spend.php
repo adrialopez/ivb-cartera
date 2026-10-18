@@ -218,11 +218,11 @@ class Ivbc_Spend {
             $title = 'Se han descontado ' . wc_price($used) . ' de tu cartera IVB en este pedido';
             $text  = 'Es el máximo que se puede usar: el ' . esc_html($pct) . ' % del importe de tus productos (sin IVA ni material promocional)'
                 . ($avail - $used > 0.004 ? ', y te quedan ' . wc_price(max(0.0, $avail - $used)) . ' para otros pedidos' : '') . '.'
-                . ($expiry ? ' Disponible hasta el ' . esc_html($expiry) . '.' : '');
+                . (Ivbc_Frontend::window_text($expiry) !== '' ? ' Disponible' . Ivbc_Frontend::window_text($expiry) . '.' : '');
             $act   = '<span class="ivbc-notice__bal">' . $link('off', 'No usar mi cartera en este pedido') . '</span>';
         } elseif (self::opted_out()) {
             $title = 'Tienes ' . wc_price($avail) . ' en tu cartera IVB';
-            $text  = 'No se está usando en este pedido.' . ($expiry ? ' Disponible hasta el ' . esc_html($expiry) . '.' : '');
+            $text  = 'No se está usando en este pedido.' . (Ivbc_Frontend::window_text($expiry) !== '' ? ' Disponible' . Ivbc_Frontend::window_text($expiry) . '.' : '');
             $act   = '<span class="ivbc-notice__bal">' . $link('on', 'Usar mi cartera en este pedido') . '</span>';
         } else {
             return $empty;

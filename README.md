@@ -36,4 +36,5 @@ Tabla `{prefix}ivbc_ledger` (una fila por apunte: acumulación `accrual`, ajuste
 - 1.2.4: Mi cartera blindada frente al CSS de Betheme (márgenes y sangrías de listas): bloques alineados y con espacio entre ellos.
 - 1.2.5: Mi cartera sin el nombre de la campaña ni el texto de canje pendiente.
 - 1.3.1: la cartera sigue **inactiva para los clientes** (por defecto solo administradores y modo de prueba); se retira el paso que la abría a todos al actualizar.
+- 1.3.2: el periodo de uso («desde / hasta») se muestra completo —«desde el X hasta el Y»— en Mi cartera, en los avisos del carrito, del checkout y del pedido y en el correo.
 - 1.3.0: interruptores independientes para ganar y para gastar; **gastar saldo en el carrito** (descuento automático hasta el 20 % del importe de los productos, opción de no usarlo en un pedido, devolución si el pedido se cancela); bloque «Usar mi cartera» y movimientos de saldo gastado en Mi cartera; fechas de uso (desde / hasta); administración con saldo gastado. Probado en un WooCommerce real (WordPress Playground): carrito, checkout con transferencia, procesando y cancelado.
