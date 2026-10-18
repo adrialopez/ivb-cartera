@@ -268,7 +268,7 @@ class Ivbc_Frontend {
             $out .= '<li>' . self::icon('tag') . '<span>Utilizable<strong>' . self::window_text($expiry) . '</strong></span></li>';
         }
         if (Ivbc_Rules::spend_on()) {
-            $out .= '<li>' . self::icon('bag') . '<span>Límite de uso: <strong>' . esc_html($limit) . ' %</strong> del importe de los productos de cada pedido</span></li>';
+            $out .= '<li>' . self::icon('bag') . '<span>Límite de uso: <strong>' . esc_html($limit) . ' %</strong> del importe de los productos de cada pedido (con IVA)</span></li>';
         }
         return '<ul class="ivbc-chips">' . $out . '</ul>';
     }

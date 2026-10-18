@@ -44,3 +44,4 @@ Tabla `{prefix}ivbc_ledger` (una fila por apunte: acumulación `accrual`, ajuste
 - 1.4.2: el enlace «Usar / No usar mi cartera en este pedido» ya no apunta a la URL AJAX de los fragmentos del carrito (salía una pantalla en blanco con código): vuelve siempre a la página del carrito o del checkout.
 - 1.4.3: los enlaces «Usar / No usar mi cartera» que el navegador tenía guardados de versiones anteriores (apuntaban a `?wc-ajax=get_refreshed_fragments`) también funcionan: se procesan antes que WooCommerce AJAX y vuelven al carrito.
 - 1.4.4: el importe que dice el aviso y el que se apunta en el saldo son exactamente el de la línea «Cartera IVB» del resumen (descuento + su impuesto; sin el recargo de equivalencia), sin diferencias de un céntimo por redondeo.
+- 1.4.5: el límite de uso de «Mi cartera» aclara «(con IVA)».
