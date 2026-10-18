@@ -73,6 +73,24 @@ class Ivbc_Orders {
                 $amount += (float) $item->get_discount();
             }
         }
+        // El saldo se gasta CON IVA (como se gana): el descuento del cupón (sin IVA) se pasa a importe con IVA con el IVA medio de las líneas del pedido
+        // (el cupón es un % igual en todas las líneas, así que el cálculo es exacto). Sin recargo de equivalencia.
+        if ($amount > 0) {
+            if ((string) $order->get_meta('_ivbc_discount_ex') !== (string) round($amount, 2)) {
+                $order->update_meta_data('_ivbc_discount_ex', round($amount, 2)); // descuento sin IVA tal como está en el pedido (para recalcular desde el administrador)
+                $order->save_meta_data();
+            }
+            $net = 0.0;
+            $vat = 0.0;
+            foreach ($order->get_items('line_item') as $li) {
+                $t = (float) $li->get_total();
+                if ($t > 0 && $li->get_meta('_mpbob_source') === '' && $li->get_meta('_ivb_promo') === '' && !Ivbc_Rules::is_promo_product_id($li->get_product_id())) {
+                    $net += $t;
+                    $vat += Ivbc_Rules::vat_only($li->get_taxes()['total'] ?? array());
+                }
+            }
+            $amount = round($amount * (1 + ($net > 0 ? $vat / $net : 0.0)), 2);
+        }
         $existing = Ivbc_Ledger::get_redeem($order_id);
         if ($amount > 0.004) {
             if (in_array($order->get_status(), array('cancelled', 'failed', 'refunded', 'trash'), true)) {
@@ -100,7 +118,12 @@ class Ivbc_Orders {
         $eval    = Ivbc_Rules::evaluate_order($order);
 
         // Reembolsos parciales: se descuenta lo devuelto de la base
-        $refunded = max(0.0, (float) $order->get_total_refunded() - (float) $order->get_total_tax_refunded() - (float) $order->get_total_shipping_refunded());
+        $refunded = 0.0; // productos devueltos con IVA (sin recargo de equivalencia ni envío)
+        foreach ($order->get_refunds() as $rf) {
+            foreach ($rf->get_items('line_item') as $ri) {
+                $refunded += abs((float) $ri->get_total()) + abs(Ivbc_Rules::vat_only($ri->get_taxes()['total'] ?? array()));
+            }
+        }
         if ($refunded > 0) {
             $base           = max(0.0, $eval['base'] - $refunded);
             $eval['base']   = round($base, 2);

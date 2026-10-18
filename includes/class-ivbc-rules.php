@@ -3,7 +3,7 @@
  * Reglas de la campaña: quién participa, cuándo y qué pedidos acumulan.
  *
  * Un pedido acumula si tiene al menos N unidades (por defecto 20) que no sean material promocional
- * ni regalos. Se acumula el porcentaje (por defecto 5 %) del importe de esas líneas, sin IVA y sin envío.
+ * ni regalos. Se acumula el porcentaje (por defecto 5 %) del importe de esas líneas, con IVA y sin envío.
  */
 if (!defined('ABSPATH')) {
     exit;
@@ -86,6 +86,48 @@ class Ivbc_Rules {
         return self::$promo_cache[$product_id];
     }
 
+
+    /* ---------- IVA: el saldo se gana y se gasta sobre el importe CON IVA (sin recargo de equivalencia) ---------- */
+
+    /** ¿Es el impuesto «recargo de equivalencia» (R.E.)? Nunca entra en la cartera. */
+    public static function is_re_rate($rate_id) {
+        static $cache = array();
+        $rate_id = (int) $rate_id;
+        if (!isset($cache[$rate_id])) {
+            $r = class_exists('WC_Tax') ? WC_Tax::_get_tax_rate($rate_id, ARRAY_A) : null;
+            $name  = is_array($r) ? (string) $r['tax_rate_name'] : '';
+            $class = is_array($r) ? (string) $r['tax_rate_class'] : '';
+            $cache[$rate_id] = (bool) preg_match('/^\s*r\.?\s*e\.?\s*$/i', $name) || (substr($class, -3) === '-re' && is_array($r) && (int) $r['tax_rate_priority'] > 1);
+        }
+        return $cache[$rate_id];
+    }
+
+    /** Suma de impuestos por tipo (id => importe) sin el recargo de equivalencia. */
+    public static function vat_only($taxes) {
+        $sum = 0.0;
+        foreach ((array) $taxes as $rate_id => $amount) {
+            if (!self::is_re_rate($rate_id)) {
+                $sum += (float) $amount;
+            }
+        }
+        return $sum;
+    }
+
+    /** Fracción de IVA (sin R.E.) de una clase de impuesto para el cliente actual, p. ej. 0,21. */
+    public static function vat_fraction($tax_class) {
+        if (!class_exists('WC_Tax') || !function_exists('WC')) {
+            return 0.0;
+        }
+        $rates = WC_Tax::get_rates((string) $tax_class, WC()->customer);
+        $f = 0.0;
+        foreach ($rates as $id => $r) {
+            if (!self::is_re_rate($id)) {
+                $f += (float) $r['rate'] / 100;
+            }
+        }
+        return $f;
+    }
+
     /** Resultado estándar a partir de unidades e importe base. */
     public static function result($units, $base) {
         $min = (int) Ivbc_Settings::get('min_units');
@@ -119,13 +161,13 @@ class Ivbc_Rules {
                 continue;
             }
             $units += $qty;
-            $base  += $total;
+            $base  += $total + self::vat_only($item->get_taxes()['total'] ?? array()); // con IVA, sin recargo de equivalencia
         }
         return self::result($units, $base);
     }
 
     /**
-     * Importe (sin IVA, antes de cupones) de las líneas del carrito sobre las que se puede gastar saldo: las mismas que cuentan para acumular
+     * Importe (con IVA, antes de cupones) de las líneas del carrito sobre las que se puede gastar saldo: las mismas que cuentan para acumular
      * (sin material promocional ni líneas a 0 €). Se calcula con el precio de cada producto porque se consulta mientras se calculan los totales.
      */
     public static function cart_spend_base($cart) {
@@ -133,7 +175,7 @@ class Ivbc_Rules {
         return $r['base'];
     }
 
-    /** Base (sin IVA) e ids de producto de las líneas sobre las que se puede gastar saldo. @return array{base:float,ids:int[]} */
+    /** Base (con IVA) e ids de producto de las líneas sobre las que se puede gastar saldo. @return array{base:float,ids:int[]} */
     public static function cart_spend_lines($cart) {
         $base = 0.0;
         $ids  = array();
@@ -153,6 +195,7 @@ class Ivbc_Rules {
                 continue;
             }
             $line = (float) wc_get_price_excluding_tax($ci['data'], array('qty' => $qty));
+            $line = $line * (1 + self::vat_fraction($ci['data']->get_tax_class())); // con IVA (sin recargo de equivalencia)
             if ($line > 0) {
                 $base += $line;
                 $ids[(int) $ci['product_id']] = (int) $ci['product_id'];
@@ -182,7 +225,7 @@ class Ivbc_Rules {
                 continue;
             }
             $units += $qty;
-            $base  += $total;
+            $base  += $total + self::vat_only(isset($ci['line_tax_data']['total']) ? $ci['line_tax_data']['total'] : array()); // con IVA, sin recargo de equivalencia
         }
         return self::result($units, $base);
     }

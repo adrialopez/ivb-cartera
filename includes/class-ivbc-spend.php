@@ -3,7 +3,7 @@
  * Gastar saldo de la cartera: un cupón virtual de importe fijo («ivbc-cartera») que el carrito aplica solo.
  *
  * - Importe = lo menor entre el saldo disponible y el porcentaje máximo por pedido (por defecto 20 %) del importe de los productos
- *   (sin IVA, antes de cupones, sin material promocional). Es un descuento sobre la base imponible, repartido por líneas por WooCommerce
+ *   (con IVA, antes de cupones, sin material promocional). Es un descuento sobre la base imponible, repartido por líneas por WooCommerce
  *   (así el IVA de cada tipo baja en proporción).
  * - El cliente puede no usarlo en un pedido («No usar en este pedido»); se recuerda en la sesión de compra.
  * - Al hacer el pedido, el importe se descuenta del saldo (apunte «redeem»); si el pedido se cancela o falla, se devuelve (ver Ivbc_Orders).
@@ -98,8 +98,10 @@ class Ivbc_Spend {
         if (is_admin() && !empty($_POST['order_id'])) { // phpcs:ignore WordPress.Security.NonceVerification
             // recálculo de un pedido en el administrador: se mantiene lo que se gastó en ese pedido (fijo, sobre todo el pedido)
             $row = Ivbc_Ledger::get_redeem((int) $_POST['order_id']); // phpcs:ignore WordPress.Security.NonceVerification
+            $ord = wc_get_order((int) $_POST['order_id']); // phpcs:ignore WordPress.Security.NonceVerification
+            $ex  = $ord ? (float) $ord->get_meta('_ivbc_discount_ex') : 0.0; // el apunte está CON IVA; el cupón fijo se aplica sin IVA
             return array(
-                'discount_type' => 'fixed_cart', 'amount' => ($row && $row->status === 'confirmed') ? abs((float) $row->amount) : 0.0,
+                'discount_type' => 'fixed_cart', 'amount' => ($row && $row->status === 'confirmed') ? ($ex > 0 ? $ex : abs((float) $row->amount)) : 0.0,
                 'individual_use' => false, 'usage_limit' => 0, 'free_shipping' => false, 'exclude_sale_items' => false, 'description' => 'Saldo de la cartera IVB',
             );
         }
@@ -214,11 +216,9 @@ class Ivbc_Spend {
             return '<a href="' . esc_url(wp_nonce_url(add_query_arg('ivbc_wallet', $state), self::NONCE)) . '">' . esc_html($label) . '</a>';
         };
         if ($applied) {
-            $used  = (float) $cart->get_coupon_discount_amount(self::CODE, true);   // sin IVA: lo que sale de tu saldo
-            $inc   = (float) $cart->get_coupon_discount_amount(self::CODE, false);  // con IVA: como lo enseña el resumen si los precios se muestran con IVA
-            $title = 'Se han descontado ' . wc_price($used) . ' de tu cartera IVB en este pedido'
-                . (abs($inc - $used) > 0.004 ? ' (' . wc_price($inc) . ' con IVA, como aparece en el resumen)' : '');
-            $text  = 'Es el máximo que se puede usar: el ' . esc_html($pct) . ' % del importe de tus productos (sin IVA ni material promocional)'
+            $used  = self::amount_for_cart($cart, $uid); // importe con IVA que se gasta de tu saldo
+            $title = 'Se han descontado ' . wc_price($used) . ' de tu cartera IVB en este pedido';
+            $text  = 'Es el máximo que se puede usar: el ' . esc_html($pct) . ' % del importe de tus productos (con IVA, sin material promocional)'
                 . ($avail - $used > 0.004 ? ', y te quedan ' . wc_price(max(0.0, $avail - $used)) . ' para otros pedidos' : '') . '.'
                 . (Ivbc_Frontend::window_text($expiry) !== '' ? ' Disponible' . Ivbc_Frontend::window_text($expiry) . '.' : '');
             $act   = '<span class="ivbc-notice__bal">' . $link('off', 'No usar mi cartera en este pedido') . '</span>';

@@ -111,7 +111,7 @@ class Ivbc_Frontend {
 
         if ($eval['eligible']) {
             $title = 'Este pedido acumula ' . wc_price($eval['amount']) . ' en tu cartera IVB';
-            $text  = 'Es el ' . esc_html($pct) . ' % del importe de tus productos, sin IVA ni material promocional. '
+            $text  = 'Es el ' . esc_html($pct) . ' % del importe de tus productos con IVA (sin material promocional). '
                 . 'Se suma a tu cartera cuando confirmemos el pago del pedido. ' . self::use_text($expiry);
             $class = 'ivbc-notice ivbc-notice--ok';
             $bar   = '';
@@ -284,7 +284,7 @@ class Ivbc_Frontend {
         $future = $start !== '' && time() < Ivbc_Settings::ts($start);
         $open   = Ivbc_Rules::spend_open(get_current_user_id());
         $avail  = Ivbc_Spend::available(get_current_user_id());
-        $body   = 'Tu saldo se descuenta solo en el carrito: se resta lo máximo que se pueda, hasta el <strong>' . esc_html($limit) . ' %</strong> del importe de los productos de cada pedido (sin IVA ni material promocional). Si prefieres no usarlo en un pedido, puedes quitarlo desde el carrito.';
+        $body   = 'Tu saldo se descuenta solo en el carrito: se resta lo máximo que se pueda, hasta el <strong>' . esc_html($limit) . ' %</strong> del importe de los productos de cada pedido (con IVA, sin material promocional). Si prefieres no usarlo en un pedido, puedes quitarlo desde el carrito.';
         if ($future) {
             $state = 'Podrás usar tu cartera a partir del ' . esc_html(self::date_es($start)) . '.';
             $cta   = '';
