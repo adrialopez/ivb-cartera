@@ -199,6 +199,23 @@ class Ivbc_Spend {
 
     /* ---------- aviso de carrito y checkout ---------- */
 
+    /**
+     * Página del carrito o del checkout a la que vuelve el enlace «Usar / No usar mi cartera». El aviso también se pinta dentro de peticiones AJAX
+     * (fragmentos del carrito: ?wc-ajax=…): ahí la URL actual NO es una página, así que se usa la de donde viene la petición.
+     */
+    private static function page_url() {
+        $cur = (function_exists('wp_doing_ajax') && wp_doing_ajax()) || isset($_GET['wc-ajax']); // phpcs:ignore WordPress.Security.NonceVerification
+        if ($cur) {
+            $ref = wp_get_referer();
+            $host = wp_parse_url(home_url(), PHP_URL_HOST);
+            if ($ref && wp_parse_url($ref, PHP_URL_HOST) === $host) {
+                return remove_query_arg(array('ivbc_wallet', '_wpnonce', 'wc-ajax'), $ref);
+            }
+            return function_exists('is_checkout') && is_checkout() ? wc_get_checkout_url() : wc_get_cart_url();
+        }
+        return remove_query_arg(array('ivbc_wallet', '_wpnonce', 'wc-ajax'));
+    }
+
     public static function notice_html() {
         $uid = self::user_id();
         $empty = '<div id="ivbc-spend-notice"></div>';
@@ -214,7 +231,7 @@ class Ivbc_Spend {
         $expiry  = Ivbc_Frontend::date_es(Ivbc_Settings::get('expiry'));
         $applied = $cart->has_discount(self::CODE);
         $link    = function ($state, $label) {
-            return '<a href="' . esc_url(wp_nonce_url(add_query_arg('ivbc_wallet', $state), self::NONCE)) . '">' . esc_html($label) . '</a>';
+            return '<a href="' . esc_url(wp_nonce_url(add_query_arg('ivbc_wallet', $state, self::page_url()), self::NONCE)) . '">' . esc_html($label) . '</a>';
         };
         if ($applied) {
             $used  = self::amount_for_cart($cart, $uid); // importe con IVA que se gasta de tu saldo
