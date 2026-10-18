@@ -73,23 +73,26 @@ class Ivbc_Orders {
                 $amount += (float) $item->get_discount();
             }
         }
-        // El saldo se gasta CON IVA (como se gana): el descuento del cupón (sin IVA) se pasa a importe con IVA con el IVA medio de las líneas del pedido
-        // (el cupón es un % igual en todas las líneas, así que el cálculo es exacto). Sin recargo de equivalencia.
+        // El saldo se gasta CON IVA (como se gana): descuento sin IVA + el impuesto del descuento tal como lo registra WooCommerce (el que ve el cliente en el
+        // resumen). Si hay recargo de equivalencia, solo cuenta la parte de IVA. Así el apunte coincide con la línea «Cartera IVB» del pedido.
         if ($amount > 0) {
+            $disc_tax = 0.0;
+            foreach ($order->get_items('coupon') as $item) {
+                if (strtolower((string) $item->get_code()) === Ivbc_Spend::CODE) {
+                    $disc_tax += (float) $item->get_discount_tax();
+                }
+            }
             if ((string) $order->get_meta('_ivbc_discount_ex') !== (string) round($amount, 2)) {
                 $order->update_meta_data('_ivbc_discount_ex', round($amount, 2)); // descuento sin IVA tal como está en el pedido (para recalcular desde el administrador)
                 $order->save_meta_data();
             }
-            $net = 0.0;
-            $vat = 0.0;
+            $taxes = array();
             foreach ($order->get_items('line_item') as $li) {
-                $t = (float) $li->get_total();
-                if ($t > 0 && $li->get_meta('_mpbob_source') === '' && $li->get_meta('_ivb_promo') === '' && !Ivbc_Rules::is_promo_product_id($li->get_product_id())) {
-                    $net += $t;
-                    $vat += Ivbc_Rules::vat_only($li->get_taxes()['total'] ?? array());
+                if ((float) $li->get_total() > 0 && $li->get_meta('_mpbob_source') === '' && $li->get_meta('_ivb_promo') === '' && !Ivbc_Rules::is_promo_product_id($li->get_product_id())) {
+                    $taxes[] = $li->get_taxes()['total'] ?? array();
                 }
             }
-            $amount = round($amount * (1 + ($net > 0 ? $vat / $net : 0.0)), 2);
+            $amount = round($amount + $disc_tax * Ivbc_Rules::vat_share($taxes), 2);
         }
         $existing = Ivbc_Ledger::get_redeem($order_id);
         if ($amount > 0.004) {

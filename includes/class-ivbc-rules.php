@@ -113,6 +113,25 @@ class Ivbc_Rules {
         return $sum;
     }
 
+
+    /**
+     * Parte del impuesto de las líneas elegibles que es IVA (0..1): el resto es recargo de equivalencia. Sirve para pasar a «con IVA» el impuesto
+     * del descuento tal como lo registra WooCommerce (que mezcla IVA y R.E.). @param array $tax_arrays lista de arrays rate_id => importe
+     */
+    public static function vat_share($tax_arrays) {
+        $vat = 0.0;
+        $all = 0.0;
+        foreach ($tax_arrays as $taxes) {
+            foreach ((array) $taxes as $rate_id => $amount) {
+                $all += (float) $amount;
+                if (!self::is_re_rate($rate_id)) {
+                    $vat += (float) $amount;
+                }
+            }
+        }
+        return $all > 0 ? $vat / $all : 0.0;
+    }
+
     /** Fracción de IVA (sin R.E.) de una clase de impuesto para el cliente actual, p. ej. 0,21. */
     public static function vat_fraction($tax_class) {
         if (!class_exists('WC_Tax') || !function_exists('WC')) {
