@@ -16,6 +16,7 @@ class Ivbc_Orders {
     private static $running = false;
 
     public static function init() {
+        add_action('woocommerce_checkout_create_order', array(__CLASS__, 'store_intended'), 20, 2);
         add_action('woocommerce_checkout_order_processed', array(__CLASS__, 'sync'), 40);
         add_action('woocommerce_store_api_checkout_order_processed', array(__CLASS__, 'sync'), 40);
         add_action('woocommerce_update_order', array(__CLASS__, 'sync'), 40);
@@ -65,6 +66,18 @@ class Ivbc_Orders {
      * Saldo gastado en el pedido (cupón «ivbc-cartera»): se descuenta del saldo mientras el pedido siga vivo y se devuelve si se cancela o falla.
      * Funciona aunque la cartera ya no esté visible: el saldo siempre tiene que cuadrar con los pedidos.
      */
+    /** Importe con IVA que el carrito quería gastar al hacer el pedido (el cupón puede quedar 1 céntimo por debajo por el redondeo de WooCommerce). */
+    public static function store_intended($order, $data = null) {
+        if (!function_exists('WC') || !WC()->cart || !WC()->cart->has_discount(Ivbc_Spend::CODE)) {
+            return;
+        }
+        $uid = (int) $order->get_customer_id();
+        $amt = $uid ? Ivbc_Spend::amount_for_cart(WC()->cart, $uid) : 0.0;
+        if ($amt > 0) {
+            $order->update_meta_data('_ivbc_intended', round($amt, 2));
+        }
+    }
+
     private static function sync_redeem($order, $user_id) {
         $order_id = (int) $order->get_id();
         $amount   = 0.0;
@@ -93,6 +106,11 @@ class Ivbc_Orders {
                 }
             }
             $amount = round($amount + $disc_tax * Ivbc_Rules::vat_share($taxes), 2);
+            // Redondeo: si el cupón quedó a ≤ 2 céntimos de lo que se quería gastar, se apunta lo previsto: gastar todo el saldo lo deja en 0, sin céntimos sueltos
+            $intended = (float) $order->get_meta('_ivbc_intended');
+            if ($intended > 0 && abs($intended - $amount) <= 0.02) {
+                $amount = round($intended, 2);
+            }
         }
         $existing = Ivbc_Ledger::get_redeem($order_id);
         if ($amount > 0.004) {

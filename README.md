@@ -45,3 +45,4 @@ Tabla `{prefix}ivbc_ledger` (una fila por apunte: acumulación `accrual`, ajuste
 - 1.4.3: los enlaces «Usar / No usar mi cartera» que el navegador tenía guardados de versiones anteriores (apuntaban a `?wc-ajax=get_refreshed_fragments`) también funcionan: se procesan antes que WooCommerce AJAX y vuelven al carrito.
 - 1.4.4: el importe que dice el aviso y el que se apunta en el saldo son exactamente el de la línea «Cartera IVB» del resumen (descuento + su impuesto; sin el recargo de equivalencia), sin diferencias de un céntimo por redondeo.
 - 1.4.5: el límite de uso de «Mi cartera» aclara «(con IVA)».
+- 1.4.6: sin céntimos sueltos: el pedido guarda lo que el carrito quería gastar (`_ivbc_intended`) y, si el cupón quedó a ≤ 2 céntimos por el redondeo de WooCommerce, el apunte de saldo es lo previsto; gastar todo el saldo lo deja exactamente en 0.
