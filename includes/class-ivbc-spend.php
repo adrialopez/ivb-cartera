@@ -5,7 +5,7 @@
  * - Importe = lo menor entre el saldo disponible y el porcentaje máximo por pedido (por defecto 20 %) del importe de los productos
  *   (con IVA, antes de cupones, sin material promocional). Es un descuento sobre la base imponible, repartido por líneas por WooCommerce
  *   (así el IVA de cada tipo baja en proporción).
- * - El cliente puede no usarlo en un pedido («No usar en este pedido»); se recuerda en la sesión de compra.
+ * - El cliente puede no usarlo en un pedido («No usar mi cartera en este pedido»); se recuerda en la sesión de compra. Quitar el cupón con la «x» o por URL NO cuenta como no usarlo: se vuelve a aplicar.
  * - Al hacer el pedido, el importe se descuenta del saldo (apunte «redeem»); si el pedido se cancela o falla, se devuelve (ver Ivbc_Orders).
  * - Solo funciona con el interruptor «Gastar saldo» activo, dentro de las fechas de uso y para quien ve la cartera.
  */
@@ -26,7 +26,7 @@ class Ivbc_Spend {
         add_filter('woocommerce_coupon_is_valid', array(__CLASS__, 'coupon_valid'), 10, 2);
         add_filter('woocommerce_cart_totals_coupon_label', array(__CLASS__, 'coupon_label'), 10, 2);
         add_filter('woocommerce_coupon_message', array(__CLASS__, 'coupon_message'), 10, 3);
-        add_action('woocommerce_removed_coupon', array(__CLASS__, 'on_removed'));
+        add_filter('woocommerce_cart_totals_coupon_html', array(__CLASS__, 'hide_remove_link'), 10, 2); // el descuento de la cartera no se quita con «Eliminar»: solo con «No usar mi cartera en este pedido»
         add_action('woocommerce_cart_emptied', array(__CLASS__, 'reset_choice')); // al terminar un pedido (o vaciar el carrito) vuelve a aplicarse solo
 
         // aplicar o retirar solo cuando cambia el carrito
@@ -136,11 +136,12 @@ class Ivbc_Spend {
         return (is_object($coupon) && strtolower((string) $coupon->get_code()) === self::CODE) ? '' : $msg;
     }
 
-    /** El cliente quita el descuento de la cartera con el enlace del carrito: se recuerda para no volver a aplicarlo. */
-    public static function on_removed($code) {
-        if (!self::$busy && strtolower((string) $code) === self::CODE && function_exists('WC') && WC()->session) {
-            WC()->session->set(self::SESSION_OFF, 1);
+    /** Sin enlace «Eliminar» en el descuento de la cartera: si se quitara, volvería a aplicarse solo; la forma de no usarla es el enlace del aviso. */
+    public static function hide_remove_link($html, $coupon) {
+        if (is_object($coupon) && strtolower((string) $coupon->get_code()) === self::CODE) {
+            return preg_replace('/\s*<a [^>]*woocommerce-remove-coupon[^>]*>.*?<\/a>/is', '', (string) $html);
         }
+        return $html;
     }
 
     /** Olvida la decisión de «no usar la cartera»: vale para un pedido, no para todos. */
