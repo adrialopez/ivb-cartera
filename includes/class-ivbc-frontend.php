@@ -65,8 +65,19 @@ class Ivbc_Frontend {
     public static function window_text($expiry = null, $uid = null) {
         $expiry = $expiry === null ? self::date_es(Ivbc_Settings::date('expiry', $uid)) : $expiry;
         $start  = (string) Ivbc_Settings::date('redeem_start', $uid);
-        $from   = $start !== '' ? esc_html(self::date_es($start)) : '';
+        // Si la fecha de inicio ya ha pasado solo se indica «hasta»
+        $from   = ($start !== '' && time() < Ivbc_Settings::ts($start)) ? esc_html(self::date_es($start)) : '';
         return ($from ? ' desde el ' . $from : '') . ($expiry ? ($from ? ' hasta el ' : ' hasta el ') . esc_html($expiry) : '');
+    }
+
+    /** «entre el X y el Y» mientras no ha empezado la acumulación; una vez empezada, solo «hasta el Y». */
+    public static function accrual_window_text($uid = null) {
+        $start = (string) Ivbc_Settings::date('start', $uid);
+        $end   = esc_html(self::date_es(Ivbc_Settings::date('end', $uid)));
+        if ($start !== '' && time() < Ivbc_Settings::ts($start)) {
+            return ' entre el ' . esc_html(self::date_es($start)) . ' y el ' . $end;
+        }
+        return ' hasta el ' . $end;
     }
 
     public static function date_es($ymd) {
@@ -108,8 +119,7 @@ class Ivbc_Frontend {
 
         if ($eval['eligible']) {
             $title = 'Este pedido acumula ' . wc_price($eval['amount']) . ' en tu cartera IVB';
-            $text  = 'Acumulas un ' . esc_html($pct) . ' % de tu pedido entre el ' . esc_html(self::date_es(Ivbc_Settings::date('start')))
-                . ' y el ' . esc_html(self::date_es(Ivbc_Settings::date('end'))) . '. '
+            $text  = 'Acumulas un ' . esc_html($pct) . ' % de tu pedido' . self::accrual_window_text($uid) . '. '
                 . 'Se suma a tu cartera cuando confirmemos el pago del pedido. ' . self::use_text($expiry);
             $class = 'ivbc-notice ivbc-notice--ok';
             $bar   = '';

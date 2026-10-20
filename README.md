@@ -46,3 +46,4 @@ Tabla `{prefix}ivbc_ledger` (una fila por apunte: acumulación `accrual`, ajuste
 - 1.4.4: el importe que dice el aviso y el que se apunta en el saldo son exactamente el de la línea «Cartera IVB» del resumen (descuento + su impuesto; sin el recargo de equivalencia), sin diferencias de un céntimo por redondeo.
 - 1.4.5: el límite de uso de «Mi cartera» aclara «(con IVA)».
 - 1.4.6: sin céntimos sueltos: el pedido guarda lo que el carrito quería gastar (`_ivbc_intended`) y, si el cupón quedó a ≤ 2 céntimos por el redondeo de WooCommerce, el apunte de saldo es lo previsto; gastar todo el saldo lo deja exactamente en 0.
+- 1.5.3: el texto de acumulación dice «hasta el X» cuando la fecha de inicio ya ha pasado (antes de empezar sigue «entre el X y el Y»); lo mismo con «desde» en el plazo de gasto.
