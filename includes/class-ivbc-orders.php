@@ -87,7 +87,7 @@ class Ivbc_Orders {
             }
         }
         // El saldo se gasta CON IVA (como se gana): descuento sin IVA + el impuesto del descuento tal como lo registra WooCommerce (el que ve el cliente en el
-        // resumen). Si hay recargo de equivalencia, solo cuenta la parte de IVA. Así el apunte coincide con la línea «Cartera IVB» del pedido.
+        // resumen). Así el apunte coincide con la línea «Cartera IVB» del pedido.
         if ($amount > 0) {
             $disc_tax = 0.0;
             foreach ($order->get_items('coupon') as $item) {
@@ -99,13 +99,7 @@ class Ivbc_Orders {
                 $order->update_meta_data('_ivbc_discount_ex', round($amount, 2)); // descuento sin IVA tal como está en el pedido (para recalcular desde el administrador)
                 $order->save_meta_data();
             }
-            $taxes = array();
-            foreach ($order->get_items('line_item') as $li) {
-                if ((float) $li->get_total() > 0 && $li->get_meta('_mpbob_source') === '' && $li->get_meta('_ivb_promo') === '' && !Ivbc_Rules::is_promo_product_id($li->get_product_id())) {
-                    $taxes[] = $li->get_taxes()['total'] ?? array();
-                }
-            }
-            $amount = round($amount + $disc_tax * Ivbc_Rules::vat_share($taxes), 2);
+            $amount = round($amount + $disc_tax, 2);
             // Redondeo: si el cupón quedó a ≤ 2 céntimos de lo que se quería gastar, se apunta lo previsto: gastar todo el saldo lo deja en 0, sin céntimos sueltos
             $intended = (float) $order->get_meta('_ivbc_intended');
             if ($intended > 0 && abs($intended - $amount) <= 0.02) {

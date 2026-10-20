@@ -240,16 +240,12 @@ class Ivbc_Spend {
             return '<a href="' . esc_url(wp_nonce_url(add_query_arg('ivbc_wallet', $state, self::page_url()), self::NONCE)) . '">' . esc_html($label) . '</a>';
         };
         if ($applied) {
-            // importe con IVA que se gasta de tu saldo = el que ve el cliente en la línea «Cartera IVB» del resumen (descuento + su impuesto, sin recargo de equivalencia)
-            $taxes = array();
-            foreach ($cart->get_cart() as $ci) {
-                $taxes[] = isset($ci['line_tax_data']['total']) ? $ci['line_tax_data']['total'] : array();
-            }
+            // importe con IVA que se gasta de tu saldo = el que ve el cliente en la línea «Cartera IVB» del resumen (descuento + su impuesto)
             $ex   = (float) $cart->get_coupon_discount_amount(self::CODE, true);
             $tax  = (float) $cart->get_coupon_discount_tax_amount(self::CODE);
-            $used = $ex > 0 ? round($ex + $tax * Ivbc_Rules::vat_share($taxes), 2) : self::amount_for_cart($cart, $uid);
+            $used = $ex > 0 ? round($ex + $tax, 2) : self::amount_for_cart($cart, $uid);
             $title = 'Se han descontado ' . wc_price($used) . ' de tu cartera IVB en este pedido';
-            $text  = 'Es el máximo que se puede usar: el ' . esc_html($pct) . ' % del importe de tus productos (con IVA, sin material promocional)'
+            $text  = 'Es el máximo que se puede usar: el ' . esc_html($pct) . ' % del importe de tus productos (con IVA y recargo de equivalencia, sin material promocional)'
                 . ($avail - $used > 0.004 ? ', y te quedan ' . wc_price(max(0.0, $avail - $used)) . ' para otros pedidos' : '') . '.'
                 . (Ivbc_Frontend::window_text($expiry) !== '' ? ' Disponible' . Ivbc_Frontend::window_text($expiry) . '.' : '');
             $act   = '<span class="ivbc-notice__bal">' . $link('off', 'No usar mi cartera en este pedido') . '</span>';

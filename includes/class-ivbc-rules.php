@@ -87,7 +87,7 @@ class Ivbc_Rules {
     }
 
 
-    /* ---------- IVA: el saldo se gana y se gasta sobre el importe CON IVA (sin recargo de equivalencia) ---------- */
+    /* ---------- IVA: el saldo se gana y se gasta sobre el importe CON IVA y recargo de equivalencia (si lo tiene) ---------- */
 
     /** ¿Es el impuesto «recargo de equivalencia» (R.E.)? Nunca entra en la cartera. */
     public static function is_re_rate($rate_id) {
@@ -114,35 +114,15 @@ class Ivbc_Rules {
     }
 
 
-    /**
-     * Parte del impuesto de las líneas elegibles que es IVA (0..1): el resto es recargo de equivalencia. Sirve para pasar a «con IVA» el impuesto
-     * del descuento tal como lo registra WooCommerce (que mezcla IVA y R.E.). @param array $tax_arrays lista de arrays rate_id => importe
-     */
-    public static function vat_share($tax_arrays) {
-        $vat = 0.0;
-        $all = 0.0;
-        foreach ($tax_arrays as $taxes) {
-            foreach ((array) $taxes as $rate_id => $amount) {
-                $all += (float) $amount;
-                if (!self::is_re_rate($rate_id)) {
-                    $vat += (float) $amount;
-                }
-            }
-        }
-        return $all > 0 ? $vat / $all : 0.0;
-    }
-
-    /** Fracción de IVA (sin R.E.) de una clase de impuesto para el cliente actual, p. ej. 0,21. */
+    /** Fracción de impuestos (IVA + R.E. si el cliente lo tiene) de una clase de impuesto para el cliente actual, p. ej. 0,262. */
     public static function vat_fraction($tax_class) {
         if (!class_exists('WC_Tax') || !function_exists('WC')) {
             return 0.0;
         }
         $rates = WC_Tax::get_rates((string) $tax_class, WC()->customer);
         $f = 0.0;
-        foreach ($rates as $id => $r) {
-            if (!self::is_re_rate($id)) {
-                $f += (float) $r['rate'] / 100;
-            }
+        foreach ($rates as $r) {
+            $f += (float) $r['rate'] / 100;
         }
         return $f;
     }
@@ -214,7 +194,7 @@ class Ivbc_Rules {
                 continue;
             }
             $line = (float) wc_get_price_excluding_tax($ci['data'], array('qty' => $qty));
-            $line = $line * (1 + self::vat_fraction($ci['data']->get_tax_class())); // con IVA (sin recargo de equivalencia)
+            $line = $line * (1 + self::vat_fraction($ci['data']->get_tax_class())); // con IVA y recargo de equivalencia (si lo tiene)
             if ($line > 0) {
                 $base += $line;
                 $ids[(int) $ci['product_id']] = (int) $ci['product_id'];
