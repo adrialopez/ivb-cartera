@@ -8,7 +8,7 @@ Cartera de saldo para clientes B2B de profesional.ivbwellness.com (WooCommerce).
 - Administración en **WooCommerce > Cartera IVB**: resumen, clientes, detalle con ajuste manual, ajustes de la campaña, exportación CSV y caja "Cartera IVB" en cada pedido.
 
 ## Decisiones (a confirmar con IVB)
-- **Base del 5 %** (desde 1.4.0): suma de las líneas del pedido que cuentan **con IVA**, sin recargo de equivalencia, sin envío y ya con descuentos aplicados. El saldo se gana y se gasta con IVA (todo en la tienda lleva IVA).
+- **Base del 5 %** (desde 1.4.0): suma de las líneas del pedido que cuentan **con IVA y recargo de equivalencia (si lo tiene)** (desde 1.4.8; la acumulación incluye el R.E., el gasto de saldo no), sin envío y ya con descuentos aplicados. El saldo se gana y se gasta con IVA (todo en la tienda lleva IVA).
 - **Unidades que cuentan**: no cuentan material promocional (marca `_mpbob_is_promotional`, categoría `material-promocional`, líneas `_mpbob_source` / `_ivb_promo`) ni líneas a 0 € (regalos, 10+2).
 - **"Al menos 20"**: se usa >= 20, como dice el correo (la petición hablaba de "más de 20").
 - **Cuándo se suma**: solo cuando el pedido está **procesando o completado**. Pendiente de pago o en espera no suma nada. Si un pedido ya sumado vuelve a en espera, se cancela o se reembolsa, el saldo se retira. Reembolsos parciales restan de la base.

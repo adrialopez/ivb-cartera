@@ -3,7 +3,7 @@
  * Reglas de la campaña: quién participa, cuándo y qué pedidos acumulan.
  *
  * Un pedido acumula si tiene al menos N unidades (por defecto 20) que no sean material promocional
- * ni regalos. Se acumula el porcentaje (por defecto 5 %) del importe de esas líneas, con IVA y sin envío.
+ * ni regalos. Se acumula el porcentaje (por defecto 5 %) del importe de esas líneas, con IVA y recargo de equivalencia (si lo tiene) y sin envío.
  */
 if (!defined('ABSPATH')) {
     exit;
@@ -180,7 +180,7 @@ class Ivbc_Rules {
                 continue;
             }
             $units += $qty;
-            $base  += $total + self::vat_only($item->get_taxes()['total'] ?? array()); // con IVA, sin recargo de equivalencia
+            $base  += $total + array_sum((array) ($item->get_taxes()['total'] ?? array())); // con IVA y recargo de equivalencia (si lo tiene)
         }
         return self::result($units, $base);
     }
@@ -244,7 +244,7 @@ class Ivbc_Rules {
                 continue;
             }
             $units += $qty;
-            $base  += $total + self::vat_only(isset($ci['line_tax_data']['total']) ? $ci['line_tax_data']['total'] : array()); // con IVA, sin recargo de equivalencia
+            $base  += $total + array_sum(isset($ci['line_tax_data']['total']) ? (array) $ci['line_tax_data']['total'] : array()); // con IVA y recargo de equivalencia (si lo tiene)
         }
         return self::result($units, $base);
     }

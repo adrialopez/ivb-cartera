@@ -139,10 +139,10 @@ class Ivbc_Orders {
         $eval    = Ivbc_Rules::evaluate_order($order);
 
         // Reembolsos parciales: se descuenta lo devuelto de la base
-        $refunded = 0.0; // productos devueltos con IVA (sin recargo de equivalencia ni envío)
+        $refunded = 0.0; // productos devueltos con IVA y recargo de equivalencia (sin envío)
         foreach ($order->get_refunds() as $rf) {
             foreach ($rf->get_items('line_item') as $ri) {
-                $refunded += abs((float) $ri->get_total()) + abs(Ivbc_Rules::vat_only($ri->get_taxes()['total'] ?? array()));
+                $refunded += abs((float) $ri->get_total()) + abs(array_sum((array) ($ri->get_taxes()['total'] ?? array())));
             }
         }
         if ($refunded > 0) {
