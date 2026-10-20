@@ -61,7 +61,7 @@ class Ivbc_Frontend {
         if (Ivbc_Rules::spend_on()) {
             return 'Podrás usarlo como descuento en tus pedidos' . self::window_text($expiry) . '.';
         }
-        return 'Podrás usarlo como descuento en la campaña de Black Friday' . ($expiry ? ', hasta el ' . esc_html($expiry) : '') . '.';
+        return 'Podrás usarlo como descuento en la campaña de Black Friday' . self::window_text($expiry) . '.';
     }
 
     /** «desde el X hasta el Y» (periodo en que se puede gastar); cada extremo solo si está definido. */
@@ -111,7 +111,8 @@ class Ivbc_Frontend {
 
         if ($eval['eligible']) {
             $title = 'Este pedido acumula ' . wc_price($eval['amount']) . ' en tu cartera IVB';
-            $text  = 'Es el ' . esc_html($pct) . ' % del importe de tus productos con IVA (sin material promocional). '
+            $text  = 'Acumulas un ' . esc_html($pct) . ' % de tu pedido entre el ' . esc_html(self::date_es(Ivbc_Settings::get('start')))
+                . ' y el ' . esc_html(self::date_es(Ivbc_Settings::get('end'))) . '. '
                 . 'Se suma a tu cartera cuando confirmemos el pago del pedido. ' . self::use_text($expiry);
             $class = 'ivbc-notice ivbc-notice--ok';
             $bar   = '';
