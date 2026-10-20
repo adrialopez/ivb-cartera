@@ -58,10 +58,7 @@ class Ivbc_Frontend {
 
     /** Frase de «para qué sirve el saldo»: con «Gastar saldo» activo explica cómo se usa; si no, mantiene el texto de la campaña. */
     public static function use_text($expiry, $uid = null) {
-        if (Ivbc_Rules::spend_on()) {
-            return 'Podrás usarlo como descuento en tus pedidos' . self::window_text($expiry, $uid) . '.';
-        }
-        return 'Podrás usarlo como descuento en la campaña de Black Friday' . self::window_text($expiry, $uid) . '.';
+        return 'Podrás usarlo como descuento en tus pedidos' . self::window_text($expiry, $uid) . '.';
     }
 
     /** «desde el X hasta el Y» (periodo en que se puede gastar); cada extremo solo si está definido. */
@@ -326,7 +323,7 @@ class Ivbc_Frontend {
         echo '<h3 class="ivbc-h">Cómo funciona</h3><ol class="ivbc-steps">'
             . '<li>' . self::icon('bag') . '<strong>Compra</strong><span>' . self::period_text() . 'pedidos de al menos ' . $min . ' unidades.</span></li>'
             . '<li>' . self::icon('plus') . '<strong>Acumula</strong><span>El ' . esc_html($pct) . ' % del importe de cada pedido válido va a tu cartera.</span></li>'
-            . '<li>' . self::icon('tag') . '<strong>Aprovecha</strong><span>' . (Ivbc_Rules::spend_on() ? 'Se descuenta solo en el carrito, hasta el ' . esc_html(self::date_es(Ivbc_Settings::date('expiry'))) . '.' : 'Úsalo como descuento en la campaña de Black Friday.') . '</span></li>'
+            . '<li>' . self::icon('tag') . '<strong>Aprovecha</strong><span>' . (Ivbc_Rules::spend_on() ? 'Se descuenta solo en el carrito, hasta el ' . esc_html(self::date_es(Ivbc_Settings::date('expiry'))) . '.' : 'Úsalo como descuento en tus pedidos.') . '</span></li>'
             . '</ol>';
 
         echo '<h3 class="ivbc-h">Movimientos</h3>';
