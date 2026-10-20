@@ -245,7 +245,7 @@ class Ivbc_Spend {
             $tax  = (float) $cart->get_coupon_discount_tax_amount(self::CODE);
             $used = $ex > 0 ? round($ex + $tax, 2) : self::amount_for_cart($cart, $uid);
             $title = 'Se han descontado ' . wc_price($used) . ' de tu cartera IVB en este pedido';
-            $text  = 'Es el máximo que se puede usar: el ' . esc_html($pct) . ' % del importe de tus productos (con IVA y recargo de equivalencia, sin material promocional)'
+            $text  = 'Es el máximo que se puede usar: el ' . esc_html($pct) . ' % del importe de tus productos (con IVA y recargo de equivalencia, si lo tiene)'
                 . ($avail - $used > 0.004 ? ', y te quedan ' . wc_price(max(0.0, $avail - $used)) . ' para otros pedidos' : '') . '.'
                 . (Ivbc_Frontend::window_text($expiry) !== '' ? ' Disponible' . Ivbc_Frontend::window_text($expiry) . '.' : '');
             $act   = '<span class="ivbc-notice__bal">' . $link('off', 'No usar mi cartera en este pedido') . '</span>';
