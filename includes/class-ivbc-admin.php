@@ -60,8 +60,7 @@ class Ivbc_Admin {
         $mode = Ivbc_Rules::mode();
         echo '<div class="ivbc-modebar ivbc-modebar--' . esc_attr($mode) . '"><strong>Estado:</strong> ' . esc_html(self::mode_label())
             . ' &middot; ganar saldo: <strong>' . (Ivbc_Rules::earn_on() ? 'sí' : 'no') . '</strong> &middot; gastar saldo: <strong>' . (Ivbc_Rules::spend_on() ? 'sí' : 'no') . '</strong>'
-            . ' &middot; campaña ' . esc_html((string) Ivbc_Settings::get('campaign')) . ' del ' . esc_html(Ivbc_Frontend::date_es(Ivbc_Settings::get('start')))
-            . ' al ' . esc_html(Ivbc_Frontend::date_es(Ivbc_Settings::get('end'))) . '</div>';
+            . '</div>';
         echo '<h2 class="nav-tab-wrapper"><a class="nav-tab' . ($tab === 'clientes' ? ' nav-tab-active' : '') . '" href="' . esc_url(self::url()) . '">Clientes</a>'
             . '<a class="nav-tab' . ($tab === 'ajustes' ? ' nav-tab-active' : '') . '" href="' . esc_url(self::url(array('tab' => 'ajustes'))) . '">Ajustes</a></h2>';
         if ($user && $tab === 'clientes') {
@@ -174,7 +173,6 @@ class Ivbc_Admin {
         $field('Gastar saldo', '<label><input type="checkbox" name="settings[spend]" value="1"' . checked(!empty($s['spend']), true, false) . '> Los clientes pueden gastar su saldo como descuento en el carrito</label>', 'El descuento se aplica solo en el carrito (lo máximo que se pueda, según el límite por pedido) y el cliente puede quitarlo en cada pedido.');
         $field('Quién la ve', '<select name="settings[mode]">' . $opts . '</select>', 'En "Solo administradores" nada cambia para los clientes: ni avisos, ni saldo, ni acumulación, ni gasto.');
         $field('Modo de prueba', '<label><input type="checkbox" name="settings[test_mode]" value="1"' . checked(!empty($s['test_mode']), true, false) . '> Los administradores acumulan aunque la fecha esté fuera de la campaña</label>', 'Solo afecta a administradores. Apágalo antes de abrir la cartera a todos.');
-        $field('Nombre de la campaña', '<input type="text" name="settings[campaign]" value="' . esc_attr($s['campaign']) . '" class="regular-text">');
         $field('Acumulación desde (resto de clientes)', '<input type="date" name="settings[start]" value="' . esc_attr($s['start']) . '"> hasta <input type="date" name="settings[end]" value="' . esc_attr($s['end']) . '">', 'Se mira la fecha de creación del pedido.');
         $field('Porcentaje a acumular', '<input type="text" name="settings[percent]" value="' . esc_attr(str_replace('.', ',', (string) $s['percent'])) . '" size="5"> %', 'Sobre el importe de los productos del pedido con IVA y recargo de equivalencia (si lo tiene), sin envío y sin material promocional.');
         $field('Unidades mínimas', '<input type="number" min="1" name="settings[min_units]" value="' . (int) $s['min_units'] . '" size="5">', 'Unidades que no sean material promocional ni regalos.');

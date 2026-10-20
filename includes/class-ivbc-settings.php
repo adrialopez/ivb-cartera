@@ -116,7 +116,6 @@ class Ivbc_Settings {
             'earn'         => empty($in['earn']) ? 0 : 1,
             'spend'        => empty($in['spend']) ? 0 : 1,
             'redeem_start' => $date(isset($in['redeem_start']) ? $in['redeem_start'] : '', ''),
-            'campaign'     => isset($in['campaign']) ? sanitize_text_field($in['campaign']) : $d['campaign'],
             'start'        => $date(isset($in['start']) ? $in['start'] : '', $d['start']),
             'end'          => $date(isset($in['end']) ? $in['end'] : '', $d['end']),
             'percent'      => isset($in['percent']) ? max(0, min(100, (float) str_replace(',', '.', $in['percent']))) : $d['percent'],
