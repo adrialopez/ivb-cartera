@@ -119,7 +119,7 @@ class Ivbc_Frontend {
         } else {
             $title = 'Acumula el ' . esc_html($pct) . ' % de este pedido en tu cartera IVB';
             $text  = 'Te ' . ($eval['missing'] === 1 ? 'falta 1 unidad' : 'faltan ' . (int) $eval['missing'] . ' unidades')
-                . ' para llegar a ' . (int) $eval['min'] . '.';
+                . ' para llegar a ' . (int) $eval['min'] . ' (excluido material promocional).';
             $class = 'ivbc-notice';
             $w     = max(0, min(100, round($eval['units'] / max(1, $eval['min']) * 100)));
             $bar   = '<span class="ivbc-bar" role="img" aria-label="' . (int) $eval['units'] . ' de ' . (int) $eval['min'] . ' unidades"><span style="width:' . $w . '%"></span></span>'
@@ -285,7 +285,7 @@ class Ivbc_Frontend {
         $future = $start !== '' && time() < Ivbc_Settings::ts($start);
         $open   = Ivbc_Rules::spend_open(get_current_user_id());
         $avail  = Ivbc_Spend::available(get_current_user_id());
-        $body   = 'Tu saldo se descuenta solo en el carrito: se resta lo máximo que se pueda, hasta el <strong>' . esc_html($limit) . ' %</strong> del importe de los productos de cada pedido (con IVA y recargo de equivalencia, si lo tiene). Si prefieres no usarlo en un pedido, puedes quitarlo desde el carrito.';
+        $body   = 'Tu saldo se descuenta solo en el carrito: se resta lo máximo que se pueda, hasta el <strong>' . esc_html($limit) . ' %</strong> del importe de los productos de cada pedido (con IVA y recargo de equivalencia, si lo tiene; excluido material promocional). Si prefieres no usarlo en un pedido, puedes quitarlo desde el carrito.';
         if ($future) {
             $state = 'Podrás usar tu cartera a partir del ' . esc_html(self::date_es($start)) . '.';
             $cta   = '';
