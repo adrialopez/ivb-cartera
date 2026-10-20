@@ -119,7 +119,7 @@ class Ivbc_Frontend {
         } else {
             $title = 'Acumula el ' . esc_html($pct) . ' % de este pedido en tu cartera IVB';
             $text  = 'Te ' . ($eval['missing'] === 1 ? 'falta 1 unidad' : 'faltan ' . (int) $eval['missing'] . ' unidades')
-                . ' para llegar a ' . (int) $eval['min'] . ' (excluido material promocional).';
+                . ' para acumular saldo en este pedido (excluido material promocional).';
             $class = 'ivbc-notice';
             $w     = max(0, min(100, round($eval['units'] / max(1, $eval['min']) * 100)));
             $bar   = '<span class="ivbc-bar" role="img" aria-label="' . (int) $eval['units'] . ' de ' . (int) $eval['min'] . ' unidades"><span style="width:' . $w . '%"></span></span>'
