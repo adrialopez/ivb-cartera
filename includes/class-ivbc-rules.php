@@ -53,8 +53,8 @@ class Ivbc_Rules {
             return false;
         }
         $now   = $now === null ? time() : (int) $now;
-        $start = (string) Ivbc_Settings::get('redeem_start');
-        $end   = (string) Ivbc_Settings::get('expiry');
+        $start = (string) Ivbc_Settings::date('redeem_start', $user_id);
+        $end   = (string) Ivbc_Settings::date('expiry', $user_id);
         if ($start !== '' && $now < Ivbc_Settings::ts($start)) {
             return false;
         }
@@ -66,8 +66,8 @@ class Ivbc_Rules {
         if (Ivbc_Settings::get('test_mode') && user_can((int) $user_id, self::ADMIN_CAP)) {
             return true;
         }
-        $start = Ivbc_Settings::ts((string) Ivbc_Settings::get('start'));
-        $end   = Ivbc_Settings::ts((string) Ivbc_Settings::get('end'), true);
+        $start = Ivbc_Settings::ts((string) Ivbc_Settings::date('start', $user_id));
+        $end   = Ivbc_Settings::ts((string) Ivbc_Settings::date('end', $user_id), true);
         return $timestamp >= $start && $timestamp <= $end;
     }
 

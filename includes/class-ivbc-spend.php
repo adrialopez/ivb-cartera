@@ -234,7 +234,7 @@ class Ivbc_Spend {
         }
         $cart    = WC()->cart;
         $pct     = rtrim(rtrim(number_format(self::limit_pct(), 2, ',', ''), '0'), ',');
-        $expiry  = Ivbc_Frontend::date_es(Ivbc_Settings::get('expiry'));
+        $expiry  = Ivbc_Frontend::date_es(Ivbc_Settings::date('expiry'));
         $applied = $cart->has_discount(self::CODE);
         $link    = function ($state, $label) {
             return '<a href="' . esc_url(wp_nonce_url(add_query_arg('ivbc_wallet', $state, self::page_url()), self::NONCE)) . '">' . esc_html($label) . '</a>';

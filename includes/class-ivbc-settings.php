@@ -22,13 +22,47 @@ class Ivbc_Settings {
             // Primer día en que se puede gastar (vacío = ya) y último (fecha límite de uso)
             'redeem_start' => '',
             'campaign'     => 'PREBLACK',
-            'start'        => '2026-10-16',
-            'end'          => '2026-10-31',
+            'start'        => '2026-10-21',
+            'end'          => '2026-11-15',
             'percent'      => 5,
             'min_units'    => 20,
             'redeem_limit' => 20,
             'expiry'       => '2026-12-04',
+            // Fechas distintas por rol: el primer grupo cuyo rol tenga el cliente manda; si no encaja en ninguno, valen las fechas generales de arriba
+            'groups'       => array(
+                array('label' => '20desc, Canarias y 17.5desc', 'roles' => '20desc, canarias, 175desc', 'start' => '2026-10-21', 'end' => '2026-11-01', 'redeem_start' => '2026-11-02', 'expiry' => '2026-12-04'),
+                array('label' => '15desc, Baleares y Ceuta-Melilla', 'roles' => '15desc, baleares, ceuta-melilla', 'start' => '2026-10-21', 'end' => '2026-11-04', 'redeem_start' => '2026-11-05', 'expiry' => '2026-12-04'),
+                array('label' => '10desc', 'roles' => '10desc', 'start' => '2026-10-21', 'end' => '2026-11-09', 'redeem_start' => '2026-11-10', 'expiry' => '2026-12-04'),
+            ),
         );
+    }
+
+    /** Roles de un grupo como lista de slugs. */
+    public static function group_roles($group) {
+        return array_values(array_filter(array_map('sanitize_key', preg_split('/[\s,;]+/', (string) ($group['roles'] ?? '')))));
+    }
+
+    /**
+     * Fechas que valen para un cliente (por defecto el actual): start/end = acumula, redeem_start/expiry = gasta.
+     * @return array{start:string,end:string,redeem_start:string,expiry:string}
+     */
+    public static function dates($user_id = null) {
+        $all   = self::all();
+        $uid   = $user_id === null ? get_current_user_id() : (int) $user_id;
+        $user  = $uid ? get_userdata($uid) : false;
+        $roles = $user ? (array) $user->roles : array();
+        foreach ((array) $all['groups'] as $g) {
+            if (array_intersect(self::group_roles($g), $roles)) {
+                return array('start' => (string) $g['start'], 'end' => (string) $g['end'], 'redeem_start' => (string) $g['redeem_start'], 'expiry' => (string) $g['expiry']);
+            }
+        }
+        return array('start' => (string) $all['start'], 'end' => (string) $all['end'], 'redeem_start' => (string) $all['redeem_start'], 'expiry' => (string) $all['expiry']);
+    }
+
+    /** Una de las cuatro fechas (start, end, redeem_start, expiry) para un cliente (por defecto el actual). */
+    public static function date($key, $user_id = null) {
+        $d = self::dates($user_id);
+        return isset($d[$key]) ? $d[$key] : '';
     }
 
     public static function all() {
@@ -61,7 +95,22 @@ class Ivbc_Settings {
         $date = function ($v, $fallback) {
             return (is_string($v) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $v)) ? $v : $fallback;
         };
+        $groups = array();
+        foreach (isset($in['groups']) && is_array($in['groups']) ? $in['groups'] : array() as $g) {
+            if (!is_array($g) || trim((string) ($g['roles'] ?? '')) === '') {
+                continue;
+            }
+            $groups[] = array(
+                'label'        => sanitize_text_field($g['label'] ?? ''),
+                'roles'        => implode(', ', self::group_roles($g)),
+                'start'        => $date($g['start'] ?? '', $d['start']),
+                'end'          => $date($g['end'] ?? '', $d['end']),
+                'redeem_start' => $date($g['redeem_start'] ?? '', ''),
+                'expiry'       => $date($g['expiry'] ?? '', $d['expiry']),
+            );
+        }
         return array(
+            'groups'       => $groups,
             'mode'         => $mode,
             'test_mode'    => empty($in['test_mode']) ? 0 : 1,
             'earn'         => empty($in['earn']) ? 0 : 1,

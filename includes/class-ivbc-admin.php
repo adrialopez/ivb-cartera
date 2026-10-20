@@ -175,11 +175,23 @@ class Ivbc_Admin {
         $field('Quién la ve', '<select name="settings[mode]">' . $opts . '</select>', 'En "Solo administradores" nada cambia para los clientes: ni avisos, ni saldo, ni acumulación, ni gasto.');
         $field('Modo de prueba', '<label><input type="checkbox" name="settings[test_mode]" value="1"' . checked(!empty($s['test_mode']), true, false) . '> Los administradores acumulan aunque la fecha esté fuera de la campaña</label>', 'Solo afecta a administradores. Apágalo antes de abrir la cartera a todos.');
         $field('Nombre de la campaña', '<input type="text" name="settings[campaign]" value="' . esc_attr($s['campaign']) . '" class="regular-text">');
-        $field('Acumulación desde', '<input type="date" name="settings[start]" value="' . esc_attr($s['start']) . '"> hasta <input type="date" name="settings[end]" value="' . esc_attr($s['end']) . '">', 'Se mira la fecha de creación del pedido.');
+        $field('Acumulación desde (resto de clientes)', '<input type="date" name="settings[start]" value="' . esc_attr($s['start']) . '"> hasta <input type="date" name="settings[end]" value="' . esc_attr($s['end']) . '">', 'Se mira la fecha de creación del pedido.');
         $field('Porcentaje a acumular', '<input type="text" name="settings[percent]" value="' . esc_attr(str_replace('.', ',', (string) $s['percent'])) . '" size="5"> %', 'Sobre el importe de los productos del pedido con IVA y recargo de equivalencia (si lo tiene), sin envío y sin material promocional.');
         $field('Unidades mínimas', '<input type="number" min="1" name="settings[min_units]" value="' . (int) $s['min_units'] . '" size="5">', 'Unidades que no sean material promocional ni regalos.');
         $field('Límite de uso por pedido', '<input type="text" name="settings[redeem_limit]" value="' . esc_attr(str_replace('.', ',', (string) $s['redeem_limit'])) . '" size="5"> %', 'Máximo del importe de los productos del pedido (con IVA y recargo de equivalencia, sin material promocional) que se puede pagar con saldo.');
-        $field('Se puede gastar desde / hasta', '<input type="date" name="settings[redeem_start]" value="' . esc_attr($s['redeem_start']) . '"> hasta <input type="date" name="settings[expiry]" value="' . esc_attr($s['expiry']) . '">', 'Deja vacío el «desde» para que se pueda gastar en cuanto se active «Gastar saldo». El «hasta» es la fecha límite de uso.');
+        $field('Se puede gastar desde / hasta (resto de clientes)', '<input type="date" name="settings[redeem_start]" value="' . esc_attr($s['redeem_start']) . '"> hasta <input type="date" name="settings[expiry]" value="' . esc_attr($s['expiry']) . '">', 'Deja vacío el «desde» para que se pueda gastar en cuanto se active «Gastar saldo». El «hasta» es la fecha límite de uso.');
+        $rows = '';
+        $groups = array_values((array) $s['groups']);
+        $groups[] = array('label' => '', 'roles' => '', 'start' => '', 'end' => '', 'redeem_start' => '', 'expiry' => ''); // fila vacía para añadir otro grupo
+        foreach ($groups as $i => $g) {
+            $n = 'settings[groups][' . $i . ']';
+            $rows .= '<tr><td><input type="text" name="' . $n . '[label]" value="' . esc_attr($g['label']) . '" placeholder="Nombre"></td>'
+                . '<td><input type="text" name="' . $n . '[roles]" value="' . esc_attr($g['roles']) . '" placeholder="roles separados por comas"></td>'
+                . '<td><input type="date" name="' . $n . '[start]" value="' . esc_attr($g['start']) . '"><br><input type="date" name="' . $n . '[end]" value="' . esc_attr($g['end']) . '"></td>'
+                . '<td><input type="date" name="' . $n . '[redeem_start]" value="' . esc_attr($g['redeem_start']) . '"><br><input type="date" name="' . $n . '[expiry]" value="' . esc_attr($g['expiry']) . '"></td></tr>';
+        }
+        $field('Fechas por rol', '<table class="widefat striped" style="max-width:900px"><thead><tr><th>Grupo</th><th>Roles (slugs)</th><th>Acumula desde / hasta</th><th>Gasta desde / hasta</th></tr></thead><tbody>' . $rows . '</tbody></table>',
+            'Vale el primer grupo cuyo rol tenga el cliente (el orden de la tabla es la prioridad). Los clientes que no encajen en ninguno usan las fechas generales. Para quitar un grupo, vacía sus roles.');
         echo '</tbody></table><p><button class="button button-primary">Guardar ajustes</button></p></form>';
     }
 
