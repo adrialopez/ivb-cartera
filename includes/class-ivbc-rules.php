@@ -165,6 +165,43 @@ class Ivbc_Rules {
         );
     }
 
+    /** Códigos (en minúsculas) de los cupones que bloquean el pedido en la cartera (ajuste «Cupones que bloquean la cartera»). */
+    public static function blocked_coupons() {
+        static $cache = null;
+        if ($cache === null) {
+            $cache = array_values(array_filter(array_map('strtolower', preg_split('/[\s,;]+/', (string) Ivbc_Settings::get('blocked_coupons')))));
+        }
+        return $cache;
+    }
+
+    /** ¿Lleva el carrito alguno de los cupones que bloquean la cartera? */
+    public static function cart_has_blocked_coupon($cart) {
+        $blocked = self::blocked_coupons();
+        if (!$cart || !$blocked) {
+            return false;
+        }
+        foreach ((array) $cart->get_applied_coupons() as $code) {
+            if (in_array(strtolower((string) $code), $blocked, true)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** ¿Lleva el pedido alguno de los cupones que bloquean la cartera? */
+    public static function order_has_blocked_coupon($order) {
+        $blocked = self::blocked_coupons();
+        if (!$blocked) {
+            return false;
+        }
+        foreach ((array) $order->get_coupon_codes() as $code) {
+            if (in_array(strtolower((string) $code), $blocked, true)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** ¿Es un pedido de alta hecho con Packs & POS (formulario de alta Infarma / Summit)? Esos pedidos no acumulan. */
     public static function is_registration_order($order) {
         $is = $order->get_meta('_ivbir_registration_order') === 'yes';
@@ -175,7 +212,7 @@ class Ivbc_Rules {
     public static function evaluate_order($order) {
         $units = 0;
         $base  = 0.0;
-        if (self::is_registration_order($order)) {
+        if (self::is_registration_order($order) || self::order_has_blocked_coupon($order)) {
             return self::result($units, $base);
         }
         foreach ($order->get_items('line_item') as $item) {
@@ -239,6 +276,9 @@ class Ivbc_Rules {
 
     /** Evalúa el carrito actual. */
     public static function evaluate_cart($cart) {
+        if (self::cart_has_blocked_coupon($cart)) {
+            return null; // cupón que bloquea la cartera: sin aviso de acumulación
+        }
         $units = 0;
         $base  = 0.0;
         foreach ($cart->get_cart() as $ci) {

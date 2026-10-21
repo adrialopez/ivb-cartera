@@ -64,7 +64,7 @@ class Ivbc_Spend {
 
     /** Importe que se puede descontar ahora en el carrito (0 si no procede). */
     public static function amount_for_cart($cart, $user_id) {
-        if (!$cart || !$user_id || !Ivbc_Rules::spend_open($user_id)) {
+        if (!$cart || !$user_id || !Ivbc_Rules::spend_open($user_id) || Ivbc_Rules::cart_has_blocked_coupon($cart)) {
             return 0.0;
         }
         $avail = self::available($user_id);

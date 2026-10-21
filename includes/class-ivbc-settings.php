@@ -29,6 +29,8 @@ class Ivbc_Settings {
             'redeem_limit' => 20,
             'expiry'       => '2026-12-04',
             // Productos que no acumulan saldo: IDs (de producto o de variación) separados por comas y slugs de categorías de producto
+            // Cupones que bloquean por completo el pedido en la cartera: no acumula ni se puede gastar saldo en él
+            'blocked_coupons' => '5mgmostrador, 10mgmostrador',
             'excluded_ids'  => '',
             'excluded_cats' => array(),
             // Fechas distintas por rol: el primer grupo cuyo rol tenga el cliente manda; si no encaja en ninguno, valen las fechas generales de arriba
@@ -125,7 +127,15 @@ class Ivbc_Settings {
                 $cats[$c] = $c;
             }
         }
+        $coupons = array();
+        foreach (preg_split('/[\s,;]+/', (string) ($in['blocked_coupons'] ?? '')) as $c) {
+            $c = function_exists('wc_format_coupon_code') ? wc_format_coupon_code($c) : strtolower(trim($c));
+            if ($c !== '') {
+                $coupons[$c] = $c;
+            }
+        }
         return array(
+            'blocked_coupons' => implode(', ', $coupons),
             'excluded_ids'  => implode(', ', $ids),
             'excluded_cats' => array_values($cats),
             'groups'       => $groups,

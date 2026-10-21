@@ -178,6 +178,8 @@ class Ivbc_Admin {
         $field('Unidades mínimas', '<input type="number" min="1" name="settings[min_units]" value="' . (int) $s['min_units'] . '" size="5">', 'Unidades que no sean material promocional ni regalos.');
         $field('Límite de uso por pedido', '<input type="text" name="settings[redeem_limit]" value="' . esc_attr(str_replace('.', ',', (string) $s['redeem_limit'])) . '" size="5"> %', 'Máximo del importe de los productos del pedido (con IVA y recargo de equivalencia, sin material promocional) que se puede pagar con saldo.');
         $field('Se puede gastar desde / hasta (resto de clientes)', '<input type="date" name="settings[redeem_start]" value="' . esc_attr($s['redeem_start']) . '"> hasta <input type="date" name="settings[expiry]" value="' . esc_attr($s['expiry']) . '">', 'Deja vacío el «desde» para que se pueda gastar en cuanto se active «Gastar saldo». El «hasta» es la fecha límite de uso.');
+        $field('Cupones que bloquean la cartera', '<input type="text" name="settings[blocked_coupons]" value="' . esc_attr($s['blocked_coupons']) . '" class="regular-text" placeholder="Ej.: cupon1, cupon2">',
+            'Códigos separados por comas. Si el pedido lleva alguno de estos cupones, no acumula nada y no se puede gastar saldo en él (tampoco recibe las botellas de regalo).');
         $names = array();
         foreach (Ivbc_Rules::excluded_ids() as $pid) {
             $p = wc_get_product($pid);
