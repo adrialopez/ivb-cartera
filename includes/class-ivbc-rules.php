@@ -165,10 +165,19 @@ class Ivbc_Rules {
         );
     }
 
+    /** ¿Es un pedido de alta hecho con Packs & POS (formulario de alta Infarma / Summit)? Esos pedidos no acumulan. */
+    public static function is_registration_order($order) {
+        $is = $order->get_meta('_ivbir_registration_order') === 'yes';
+        return (bool) apply_filters('ivbc_is_registration_order', $is, $order);
+    }
+
     /** Evalúa un pedido. */
     public static function evaluate_order($order) {
         $units = 0;
         $base  = 0.0;
+        if (self::is_registration_order($order)) {
+            return self::result($units, $base);
+        }
         foreach ($order->get_items('line_item') as $item) {
             $qty   = (int) $item->get_quantity();
             $total = (float) $item->get_total();
@@ -177,6 +186,9 @@ class Ivbc_Rules {
             }
             if ($item->get_meta('_mpbob_source') !== '' || $item->get_meta('_ivb_promo') !== '') {
                 continue;
+            }
+            if ($item->get_meta('_ivbir_pack_id') !== '' || $item->get_meta('_ivbir_cart_pack_id') !== '') {
+                continue; // líneas de packs de alta (Packs & POS)
             }
             if (self::is_promo_product_id($item->get_product_id()) || self::is_excluded_product($item->get_product_id(), $item->get_variation_id())) {
                 continue;
@@ -237,8 +249,8 @@ class Ivbc_Rules {
             }
             $promo = false;
             foreach (array_keys($ci) as $k) {
-                if (strpos($k, 'mpbob') === 0 || strpos($k, '_mpbob') === 0 || strpos($k, '_ivb_promo') === 0) {
-                    $promo = true;
+                if (strpos($k, 'mpbob') === 0 || strpos($k, '_mpbob') === 0 || strpos($k, '_ivb_promo') === 0 || strpos($k, '_ivbir_') === 0) {
+                    $promo = true; // material promocional, regalos y packs de alta (Packs & POS)
                     break;
                 }
             }
