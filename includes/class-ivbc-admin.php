@@ -178,6 +178,24 @@ class Ivbc_Admin {
         $field('Unidades mínimas', '<input type="number" min="1" name="settings[min_units]" value="' . (int) $s['min_units'] . '" size="5">', 'Unidades que no sean material promocional ni regalos.');
         $field('Límite de uso por pedido', '<input type="text" name="settings[redeem_limit]" value="' . esc_attr(str_replace('.', ',', (string) $s['redeem_limit'])) . '" size="5"> %', 'Máximo del importe de los productos del pedido (con IVA y recargo de equivalencia, sin material promocional) que se puede pagar con saldo.');
         $field('Se puede gastar desde / hasta (resto de clientes)', '<input type="date" name="settings[redeem_start]" value="' . esc_attr($s['redeem_start']) . '"> hasta <input type="date" name="settings[expiry]" value="' . esc_attr($s['expiry']) . '">', 'Deja vacío el «desde» para que se pueda gastar en cuanto se active «Gastar saldo». El «hasta» es la fecha límite de uso.');
+        $names = array();
+        foreach (Ivbc_Rules::excluded_ids() as $pid) {
+            $p = wc_get_product($pid);
+            $names[] = esc_html($p ? $p->get_name() : 'ID ' . $pid) . ' (' . (int) $pid . ')';
+        }
+        $field('Productos que no acumulan', '<input type="text" name="settings[excluded_ids]" value="' . esc_attr($s['excluded_ids']) . '" class="regular-text" placeholder="Ej.: 123, 456"> '
+            . ($names ? '<p class="description" style="color:#1d2327"><strong>Ahora:</strong> ' . implode(' · ', $names) . '</p>' : ''),
+            'IDs de producto (o de variación) separados por comas. Estos productos no suman unidades ni importe para la acumulación; el resto del pedido sí puede acumular. Se pueden gastar igual con el saldo.');
+        $catlist = '';
+        $terms = get_terms(array('taxonomy' => 'product_cat', 'hide_empty' => false, 'orderby' => 'name'));
+        if (!is_wp_error($terms)) {
+            foreach ($terms as $t) {
+                $catlist .= '<label style="display:inline-block;min-width:240px;margin:2px 12px 2px 0"><input type="checkbox" name="settings[excluded_cats][]" value="' . esc_attr($t->slug) . '"'
+                    . checked(in_array($t->slug, (array) $s['excluded_cats'], true), true, false) . '> ' . esc_html($t->name) . '</label>';
+            }
+        }
+        $field('Categorías que no acumulan', '<div style="max-height:180px;overflow:auto;border:1px solid #dcdcde;padding:6px 10px;background:#fff;max-width:900px">' . $catlist . '</div>',
+            'Todos los productos de la categoría marcada dejan de acumular (solo cuenta la categoría asignada directamente al producto).');
         $rows = '';
         $groups = array_values((array) $s['groups']);
         $groups[] = array('label' => '', 'roles' => '', 'start' => '', 'end' => '', 'redeem_start' => '', 'expiry' => ''); // fila vacía para añadir otro grupo

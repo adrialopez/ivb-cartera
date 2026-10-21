@@ -71,6 +71,28 @@ class Ivbc_Rules {
         return $timestamp >= $start && $timestamp <= $end;
     }
 
+    /** IDs de producto/variación excluidos de la acumulación (ajuste «Productos que no acumulan»). */
+    public static function excluded_ids() {
+        static $cache = null;
+        if ($cache === null) {
+            $cache = array_values(array_filter(array_map('intval', preg_split('/[\s,;]+/', (string) Ivbc_Settings::get('excluded_ids')))));
+        }
+        return $cache;
+    }
+
+    /** ¿Está este producto excluido de la acumulación (por ID de producto o variación, o por categoría)? */
+    public static function is_excluded_product($product_id, $variation_id = 0) {
+        $product_id   = (int) $product_id;
+        $variation_id = (int) $variation_id;
+        $ids          = self::excluded_ids();
+        $excluded     = in_array($product_id, $ids, true) || ($variation_id && in_array($variation_id, $ids, true));
+        if (!$excluded) {
+            $cats = array_filter((array) Ivbc_Settings::get('excluded_cats'));
+            $excluded = $cats && $product_id && has_term($cats, 'product_cat', $product_id);
+        }
+        return (bool) apply_filters('ivbc_is_excluded_product', $excluded, $product_id, $variation_id);
+    }
+
     /** ¿Es un producto de material promocional? */
     public static function is_promo_product_id($product_id) {
         $product_id = (int) $product_id;
@@ -156,7 +178,7 @@ class Ivbc_Rules {
             if ($item->get_meta('_mpbob_source') !== '' || $item->get_meta('_ivb_promo') !== '') {
                 continue;
             }
-            if (self::is_promo_product_id($item->get_product_id())) {
+            if (self::is_promo_product_id($item->get_product_id()) || self::is_excluded_product($item->get_product_id(), $item->get_variation_id())) {
                 continue;
             }
             $units += $qty;
@@ -220,7 +242,7 @@ class Ivbc_Rules {
                     break;
                 }
             }
-            if ($promo || self::is_promo_product_id($ci['product_id'])) {
+            if ($promo || self::is_promo_product_id($ci['product_id']) || self::is_excluded_product($ci['product_id'], isset($ci['variation_id']) ? $ci['variation_id'] : 0)) {
                 continue;
             }
             $units += $qty;

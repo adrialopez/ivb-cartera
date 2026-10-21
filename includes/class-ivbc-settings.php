@@ -28,6 +28,9 @@ class Ivbc_Settings {
             'min_units'    => 20,
             'redeem_limit' => 20,
             'expiry'       => '2026-12-04',
+            // Productos que no acumulan saldo: IDs (de producto o de variación) separados por comas y slugs de categorías de producto
+            'excluded_ids'  => '',
+            'excluded_cats' => array(),
             // Fechas distintas por rol: el primer grupo cuyo rol tenga el cliente manda; si no encaja en ninguno, valen las fechas generales de arriba
             'groups'       => array(
                 array('label' => '20desc, Canarias y 17.5desc', 'roles' => '20desc, canarias, 175desc', 'start' => '2026-10-21', 'end' => '2026-11-01', 'redeem_start' => '2026-11-02', 'expiry' => '2026-12-04'),
@@ -109,7 +112,22 @@ class Ivbc_Settings {
                 'expiry'       => $date($g['expiry'] ?? '', $d['expiry']),
             );
         }
+        $ids = array();
+        foreach (preg_split('/[\s,;]+/', (string) ($in['excluded_ids'] ?? '')) as $id) {
+            if ((int) $id > 0) {
+                $ids[(int) $id] = (int) $id;
+            }
+        }
+        $cats = array();
+        foreach ((array) ($in['excluded_cats'] ?? array()) as $c) {
+            $c = sanitize_title((string) $c);
+            if ($c !== '') {
+                $cats[$c] = $c;
+            }
+        }
         return array(
+            'excluded_ids'  => implode(', ', $ids),
+            'excluded_cats' => array_values($cats),
             'groups'       => $groups,
             'mode'         => $mode,
             'test_mode'    => empty($in['test_mode']) ? 0 : 1,
